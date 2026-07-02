@@ -182,25 +182,12 @@ export default function ArchFileViewer({ filePath, content: initialContent }: Pr
       const core = await ipc.invoke('db:project-core-get')
       const charArch = core?.charactersArch ?? ''
       if (charArch.length < 50) {
-        setExtracting(false)
         return
       }
-      runArchCharacterExtract(project.path, charArch, project.novelConfig.genre)
-
-      // 通过 EventBus 监听提取完成事件
-      const unsub1 = globalEventBus.on('ARCH_POSTPROCESS_UPDATED', () => {
-        setExtracting(false)
-        unsub1()
-        unsub2()
-      })
-      const unsub2 = globalEventBus.on('CHARACTER_EXTRACT_FAILED', () => {
-        setExtracting(false)
-        unsub1()
-        unsub2()
-      })
-
+      await runArchCharacterExtract(project.path, charArch, project.novelConfig.genre)
     } catch (e) {
       console.error('角色卡提取失败', e)
+    } finally {
       setExtracting(false)
     }
   }, [extracting])

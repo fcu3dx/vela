@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Save, Sparkles, Info, Loader2 } from 'lucide-react'
 import { useProjectStore } from '../../stores/project-store'
 import { useLLMStore } from '../../stores/llm-store'
@@ -25,6 +25,9 @@ export default function NovelConfigEditor() {
   const [saving, setSaving] = useState(false)
   const [showGenerateConfig, setShowGenerateConfig] = useState(false)
 
+  // 使用 ref 防并发：React setState 异步可能导致 saving 状态滞后，ref 提供同步锁
+  const savingRef = useRef(false)
+
   // 各区块的独立生成状态
   const [generatingField, setGeneratingField] = useState<GeneratableField | null>(null)
 
@@ -43,8 +46,10 @@ export default function NovelConfigEditor() {
   }
 
   /** 保存配置 — Store 已是最新数据，仅需持久化到磁盘 */
-  const handleSave = async () => {
-    if (!config || saving) return
+  const handleSave = useCallback(async () => {
+    // 使用 ref 同步锁防止并发，避免 React setState 异步导致的竞态
+    if (!config || savingRef.current) return
+    savingRef.current = true
     setSaving(true)
     try {
       await saveProject()
@@ -53,9 +58,10 @@ export default function NovelConfigEditor() {
       console.error('[NovelConfigEditor] 保存失败:', error)
       addLog('error', `保存失败: ${error}`)
     } finally {
+      savingRef.current = false
       setSaving(false)
     }
-  }
+  }, [config, saveProject, addLog])
 
   /** AI 生成配置 — 打开弹框 */
   const handleAIGenerate = () => {

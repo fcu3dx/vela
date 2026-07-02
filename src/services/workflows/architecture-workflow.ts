@@ -214,18 +214,112 @@ export function createCharacterExtractSteps(_projectPath: string, characterDynam
         })
 
         const cleanedCards = stripThinkingTags(fullContent)
-        const jsonStr = cleanedCards.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
-        const parsedData = JSON.parse(jsonStr)
 
-        // 兼容两种格式：直接数组 或 { characters: [...] }
-        const parsedCards: Array<Record<string, unknown>> = Array.isArray(parsedData)
-          ? parsedData
-          : (parsedData && typeof parsedData === 'object' && Array.isArray((parsedData as Record<string, unknown>).characters))
-            ? (parsedData as Record<string, unknown>).characters as Array<Record<string, unknown>>
-            : []
+        // 辅助函数：从候选文本中提取角色数组
+        function extractCharactersFromCandidate(candidate: string): Array<Record<string, unknown>> | null {
+          try {
+            const parsedData = JSON.parse(candidate)
+            if (Array.isArray(parsedData)) return parsedData as Array<Record<string, unknown>>
+            if (parsedData && typeof parsedData === 'object' && Array.isArray((parsedData as Record<string, unknown>).characters)) {
+              return (parsedData as Record<string, unknown>).characters as Array<Record<string, unknown>>
+            }
+            return null
+          } catch {
+            return null
+          }
+        }
 
-        if (parsedCards.length === 0) {
-          throw new Error('AI 返回的角色数据格式不正确，未提取到有效角色')
+        // 增强 JSON 解析容错：支持多种大模型输出格式（多候选 + 兜底修复）
+        let parsedCards: Array<Record<string, unknown>> = []
+        const parseFailReasons: string[] = []
+
+        try {
+          // 候选1：原始文本去 markdown 块
+          const c1 = cleanedCards.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
+          const r1 = extractCharactersFromCandidate(c1)
+          if (r1 && r1.length > 0) { parsedCards = r1 }
+          else parseFailReasons.push('候选1（直接parse去markdown文本）：解析失败或角色为空')
+
+          // 候选2：尝试提取 JSON 数组 [...]
+          if (parsedCards.length === 0) {
+            const arrMatch = cleanedCards.match(/\[\s*\{[\s\S]*\}\s*\]/)
+            if (arrMatch) {
+              const r2 = extractCharactersFromCandidate(arrMatch[0])
+              if (r2 && r2.length > 0) { parsedCards = r2 }
+              else parseFailReasons.push('候选2（正则提取JSON数组）：解析失败或角色为空')
+            } else {
+              parseFailReasons.push('候选2（正则提取JSON数组）：未匹配到数组模式')
+            }
+          }
+
+          // 候选3：尝试提取 JSON 对象 { "characters": [...] }
+          if (parsedCards.length === 0) {
+            const objMatch = cleanedCards.match(/\{\s*"characters"\s*:[\s\S]*\}/)
+            if (objMatch) {
+              const r3 = extractCharactersFromCandidate(objMatch[0])
+              if (r3 && r3.length > 0) { parsedCards = r3 }
+              else parseFailReasons.push('候选3（正则提取characters对象）：解析失败或角色为空')
+            } else {
+              parseFailReasons.push('候选3（正则提取characters对象）：未匹配到对象模式')
+            }
+          }
+
+          // 候选4：从原始 fullContent（未经 stripThinkingTags）重新提取
+          if (parsedCards.length === 0) {
+            const rawArrMatch = fullContent.match(/\[\s*\{[\s\S]*\}\s*\]/)
+            if (rawArrMatch) {
+              const r4 = extractCharactersFromCandidate(rawArrMatch[0])
+              if (r4 && r4.length > 0) { parsedCards = r4 }
+              else parseFailReasons.push('候选4（原始fullContent提取JSON数组）：解析失败或角色为空')
+            }
+            if (parsedCards.length === 0) {
+              const rawObjMatch = fullContent.match(/\{\s*"characters"\s*:[\s\S]*\}/)
+              if (rawObjMatch) {
+                const r4b = extractCharactersFromCandidate(rawObjMatch[0])
+                if (r4b && r4b.length > 0) { parsedCards = r4b }
+                else parseFailReasons.push('候选4（原始fullContent提取characters对象）：解析失败或角色为空')
+              } else {
+                parseFailReasons.push('候选4（原始fullContent）：未匹配到任何JSON模式')
+              }
+            }
+          }
+
+          // 候选5（兜底修复）：对正则匹配到的截断片段尝试补全缺失的 ] 或 }
+          if (parsedCards.length === 0) {
+            // 先用非贪婪匹配获取第一个完整的 {...} 对象，再尝试组装
+            const allObjMatches = cleanedCards.match(/\{[^{}]*\{[^{}]*\}[^{}]*\}|\{[^{}]*\}/g)
+            if (allObjMatches && allObjMatches.length > 0) {
+              // 尝试将匹配到的对象组装成数组
+              const assembled = '[' + allObjMatches.join(',') + ']'
+              const r5 = extractCharactersFromCandidate(assembled)
+              if (r5 && r5.length > 0) { parsedCards = r5 }
+              else parseFailReasons.push('候选5（非贪婪组装JSON对象）：解析失败')
+            } else {
+              // 最后尝试：贪婪匹配并补全截断
+              const arrMatch = cleanedCards.match(/\[\s*\{[\s\S]*\}\s*\]/)
+              if (arrMatch) {
+                let fragment = arrMatch[0]
+                if (!fragment.trimEnd().endsWith(']')) fragment += ']'
+                const r5b = extractCharactersFromCandidate(fragment)
+                if (r5b && r5b.length > 0) { parsedCards = r5b }
+                else parseFailReasons.push('候选5（补全截断JSON）：解析失败')
+              } else {
+                parseFailReasons.push('候选5（兜底修复）：未匹配到任何JSON片段')
+              }
+            }
+          }
+
+          if (parsedCards.length === 0) {
+            const failSummary = parseFailReasons.join('；')
+            cb.log(`  JSON解析详情: ${failSummary}`)
+            throw new Error('AI 返回的角色数据格式不正确，未提取到有效角色')
+          }
+        } catch (parseErr) {
+          // 如果 JSON 解析本身失败，记录详细信息并抛出
+          const errMsg = parseErr instanceof Error ? parseErr.message : String(parseErr)
+          const tail = cleanedCards.length > 300 ? cleanedCards.slice(-300) : cleanedCards
+          cb.log(`  原始返回尾部（最后300字符）:\n${tail}`)
+          throw new Error(`角色卡 JSON 解析失败: ${errMsg}`)
         }
 
         // 构建角色卡数据列表
@@ -245,31 +339,37 @@ export function createCharacterExtractSteps(_projectPath: string, characterDynam
   ]
 }
 
-export function runArchCharacterExtract(projectPath: string, characterDynamicsContent: string, genre: string): void {
+export async function runArchCharacterExtract(projectPath: string, characterDynamicsContent: string, genre: string): Promise<void> {
   const steps = createCharacterExtractSteps(projectPath, characterDynamicsContent, genre)
-  import('../../stores/workflow-store').then(async ({ useWorkflowStore }) => {
-    await useWorkflowStore.getState().startWorkflow({
-      type: 'post_process',
-      title: '📋 后处理：角色卡提取',
-      steps: [
-        {
-          name: '提取角色卡片',
-          description: '从角色图谱中提取并生成角色卡片数据',
-          executor: async (_step, _ctx, callbacks) => {
-            const { globalEventBus } = await import('../../shared/event-bus')
-            const archStatus = await runPostProcessPipeline(projectPath, ARCH_CHARACTER_SCOPE, '架构-角色图谱', steps, callbacks)
-            if (archStatus.allCriticalPassed) {
-              // 角色卡提取成功 → 通过 EventBus 通知 ProjectService 刷新
-              globalEventBus.emit('ARCH_POSTPROCESS_UPDATED', {})
-            } else {
-              globalEventBus.emit('CHARACTER_EXTRACT_FAILED', { error: archStatus.steps.extract_character_cards?.error })
-              globalEventBus.emit('ARCH_POSTPROCESS_UPDATED', {})
-            }
-          },
+  const { useWorkflowStore } = await import('../../stores/workflow-store')
+  const runId = await useWorkflowStore.getState().startWorkflow({
+    type: 'post_process',
+    title: '📋 后处理：角色卡提取',
+    steps: [
+      {
+        name: '提取角色卡片',
+        description: '从角色图谱中提取并生成角色卡片数据',
+        executor: async (_step, _ctx, callbacks) => {
+          const { globalEventBus } = await import('../../shared/event-bus')
+          const archStatus = await runPostProcessPipeline(projectPath, ARCH_CHARACTER_SCOPE, '架构-角色图谱', steps, callbacks)
+          if (archStatus.allCriticalPassed) {
+            // 角色卡提取成功 → 通过 EventBus 通知 ProjectService 刷新
+            globalEventBus.emit('ARCH_POSTPROCESS_UPDATED', {})
+          } else {
+            globalEventBus.emit('CHARACTER_EXTRACT_FAILED', { error: archStatus.steps.extract_character_cards?.error })
+            globalEventBus.emit('ARCH_POSTPROCESS_UPDATED', {})
+          }
         },
-      ],
-    })
+      },
+    ],
   })
+
+  // 检查后处理工作流是否失败
+  const finalRun = useWorkflowStore.getState().history.find(r => r.id === runId)
+  if (finalRun && finalRun.status === 'failed') {
+    const failedStep = finalRun.steps.find(s => s.status === 'failed')
+    throw new Error(failedStep?.error || '角色卡提取失败')
+  }
 }
 
 export async function repairArchCharacterCards(projectPath: string): Promise<void> {

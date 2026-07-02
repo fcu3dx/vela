@@ -107,12 +107,12 @@ export default function WorldBuildingEditor() {
       const charArch = core?.charactersArch ?? ''
       if (charArch.length < 50) {
         console.error('角色图谱不存在或内容不完整')
-        setExtracting(false)
         return
       }
-      runArchCharacterExtract(currentProject.path, charArch, currentProject.novelConfig.genre)
+      await runArchCharacterExtract(currentProject.path, charArch, currentProject.novelConfig.genre)
     } catch (e) {
       console.error('角色卡提取失败', e)
+    } finally {
       setExtracting(false)
     }
   }, [currentProject, extracting])
@@ -264,7 +264,7 @@ export default function WorldBuildingEditor() {
                   {generated ? (
                     <>
                       <span className="text-[0.7rem] px-1.5 py-0.5 rounded font-medium bg-green-500/10 text-green-600 dark:text-green-400">
-                        已生成
+                        {isCharacters && charExtractFailed ? '已生成（角色卡提取失败 — 点击重试）' : '已生成'}
                       </span>
                       <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                         {words.toLocaleString()} 字符
@@ -288,13 +288,13 @@ export default function WorldBuildingEditor() {
                         e.stopPropagation()
                         handleExtractCharacters()
                       }}
-                      title="角色档案为空，可能是因为上一次生成失败或被删除。点击重新提取"
+                      title={charExtractFailed ? '角色卡提取失败，点击重试' : '角色档案为空，点击提取'}
                     >
                       {extracting
                         ? <RefreshCw size={12} className="animate-spin opacity-90" />
                         : <AlertTriangle size={12} className="opacity-90" />
                       }
-                      {extracting ? '提取中...' : '提取角色卡'}
+                      {extracting ? '提取中...' : charExtractFailed ? '重试提取角色卡' : '提取角色卡'}
                     </Button>
                   )}
                   {/* 查看箭头提示 */}

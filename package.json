@@ -22,6 +22,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.41.0",
     "@lancedb/lancedb": "^0.27.2",
+    "@lancedb/lancedb-darwin-arm64": "^0.27.2",
     "@lezer/highlight": "^1.2.3",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -92,7 +93,8 @@
       "better-sqlite3",
       "electron",
       "electron-winstaller",
-      "esbuild"
+      "esbuild",
+      "@lancedb/lancedb-darwin-arm64"
     ],
     "extraDependencies": [
       "apache-arrow",

@@ -6,7 +6,7 @@ import { readJsonFile, writeJsonFile, RECENT_PROJECTS_PATH } from '../utils/conf
 import { ProjectData } from '../../src/shared/ipc-channels'
 import { DIR_VELA_INTERNAL, DIR_PROMPTS } from '../../src/shared/project-paths'
 import { initProjectDatabase } from '../database'
-import { ProjectCoreRepository } from '../repositories/project-core-repository'
+import { ProjectCoreRepository, ProjectCoreData } from '../repositories/project-core-repository'
 
 interface RecentProject {
   name: string
@@ -143,7 +143,7 @@ export function registerProjectController() {
       if (!data.path) return { success: false, error: '缺少项目路径' }
 
       if (data.novelConfig) {
-        ProjectCoreRepository.update({
+        const updateData: Partial<ProjectCoreData> = {
           genre: data.novelConfig.genre,
           subGenre: data.novelConfig.subGenre,
           targetAudience: data.novelConfig.targetAudience,
@@ -155,7 +155,12 @@ export function registerProjectController() {
           globalGuidance: data.novelConfig.globalGuidance,
           writingStyle: data.novelConfig.writingStyle ?? '',
           referenceWorks: data.novelConfig.referenceWorks ?? '',
-        })
+        }
+        // 架构字段仅当有内容时才写入，避免空字符串覆盖 AI 已生成内容
+        if (data.novelConfig.coreOutline) updateData.synopsis = data.novelConfig.coreOutline
+        if (data.novelConfig.worldSetting) updateData.worldbuilding = data.novelConfig.worldSetting
+        if (data.novelConfig.protagonistProfile) updateData.charactersArch = data.novelConfig.protagonistProfile
+        ProjectCoreRepository.update(updateData)
       }
 
       if (data.name) {
@@ -182,7 +187,7 @@ export function registerProjectController() {
   ipcMain.handle('project:update-config', async (_event, _projectId: string, data: Partial<ProjectData>) => {
     try {
       if (data.novelConfig) {
-        ProjectCoreRepository.update({
+        const updateData: Partial<ProjectCoreData> = {
           genre: data.novelConfig.genre,
           subGenre: data.novelConfig.subGenre,
           targetAudience: data.novelConfig.targetAudience,
@@ -194,7 +199,12 @@ export function registerProjectController() {
           globalGuidance: data.novelConfig.globalGuidance,
           writingStyle: data.novelConfig.writingStyle ?? '',
           referenceWorks: data.novelConfig.referenceWorks ?? '',
-        })
+        }
+        // 架构字段仅当有内容时才写入，避免空字符串覆盖 AI 已生成内容
+        if (data.novelConfig.coreOutline) updateData.synopsis = data.novelConfig.coreOutline
+        if (data.novelConfig.worldSetting) updateData.worldbuilding = data.novelConfig.worldSetting
+        if (data.novelConfig.protagonistProfile) updateData.charactersArch = data.novelConfig.protagonistProfile
+        ProjectCoreRepository.update(updateData)
       }
       return { success: true }
     } catch (error) {

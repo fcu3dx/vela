@@ -175,14 +175,25 @@ export class GenerateCharactersCommand extends BaseWorkflowCommand<string> {
       .withReferenceWorks(config.referenceWorks || '')
 
     const result = await this.callLLMWithBuilder(promptBuilder, callbacks, undefined, context)
-    if (!result.trim()) throw new Error('角色图谱生成失败')
+    // 增强空内容判断：stripThinkingTags 后可能全空，记录详情便于排查
+    if (!result || !result.trim()) {
+      callbacks.log('❌ AI 返回的角色图谱内容为空（可能被 thinking 标签包裹后无正文）')
+      throw new Error('角色图谱生成失败：AI 返回空内容，请检查模型配置或重试')
+    }
     if (context.cancelled) throw new Error('工作流已取消')
 
     await writeArchToDb('charactersArch', `# 角色图谱\n\n${result}\n`)
 
-    callbacks.log('📇 正在启动角色卡自动提取流水线...')
+    callbacks.log('📇 正在提取角色卡...')
     const { runArchCharacterExtract } = await import('../architecture-workflow')
-    runArchCharacterExtract(project.path, result, config.genre)
+    try {
+      await runArchCharacterExtract(project.path, result, config.genre)
+      callbacks.log('✅ 角色卡自动提取完成')
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e)
+      callbacks.log(`⚠️ 角色卡自动提取失败: ${errMsg}`)
+      // 不阻断主工作流，角色图谱步骤本身已完成
+    }
 
     const partial = (context.data.partial as PartialArchData) || await loadPartialData(project.path)
     partial.character_dynamics_result = result

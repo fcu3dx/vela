@@ -257,9 +257,9 @@ export async function runPostProcessPipeline(
 
   if (failedSteps.length > 0) {
     const failedLabels = failedSteps.map(r => r.label).join('、')
-    callbacks.log(`⚠️ 以下后处理步骤失败：${failedLabels}`)
+    callbacks.log(`[后处理] ⚠️ 以下步骤失败：${failedLabels}`)
     if (failedSteps.some(s => s.critical)) {
-      callbacks.log('💡 存在关键步骤失败，后续流程可能被阻断。请在对应页面使用「重试」功能修复')
+      callbacks.log('[后处理] 💡 存在关键步骤失败，后续流程可能被阻断。请在对应页面使用「重试」功能修复')
     }
   }
 

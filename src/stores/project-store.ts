@@ -58,6 +58,8 @@ interface ProjectState {
   recentProjects: Array<{ name: string; path: string; updatedAt: string }>
   /** 是否正在加载 */
   loading: boolean
+  /** 保存操作防抖：防止并发 saveProject 导致数据覆盖 */
+  _saveLock: boolean
 
   // ===== Actions =====
   /** 新建项目 */
@@ -88,6 +90,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   fileTree: [],
   recentProjects: [],
   loading: false,
+  _saveLock: false,
 
   createProject: async (config) => {
     set({ loading: true })
@@ -140,12 +143,19 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   saveProject: async () => {
-    const project = get().currentProject
+    const state = get()
+    const project = state.currentProject
     console.log('[project-store.saveProject] 开始保存，项目ID:', project?.id)
     if (!project) {
       console.log('[project-store.saveProject] 项目为空，跳过保存')
       return false
     }
+    // 防止并发保存导致数据覆盖：同一时刻只允许一个保存操作
+    if (state._saveLock) {
+      console.log('[project-store.saveProject] 已有保存操作进行中，跳过本次请求')
+      return false
+    }
+    set({ _saveLock: true })
     try {
       // 提取纯净数据，防止 structured clone 序列化异常属性
       const plainData = toPlainProjectData(project)
@@ -160,6 +170,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     } catch (err) {
       console.error('[project-store.saveProject] 保存失败:', err)
       return false
+    } finally {
+      set({ _saveLock: false })
     }
   },
 
