@@ -5,7 +5,7 @@
  * 模式: compact(仅显示 emoji+名称的下拉按钮)
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useAgentStore } from '../../../stores/agent-store'
 import { agentRegistry } from '../../../services/agent/agent-registry'
@@ -20,9 +20,9 @@ export default function AgentSelector() {
   useOutsideClick(ref, () => setOpen(false), open)
 
   // 确保 registry 已初始化
-  if (agentRegistry.size === 0) {
-    agentRegistry.init()
-  }
+  useEffect(() => {
+    if (agentRegistry.size === 0) agentRegistry.init()
+  }, [])
 
   const activeAgent = agentRegistry.get(activeAgentId)
   const allAgents = agentRegistry.listAll()
