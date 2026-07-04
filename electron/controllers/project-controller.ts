@@ -160,6 +160,11 @@ export function registerProjectController() {
         if (data.novelConfig.coreOutline) updateData.synopsis = data.novelConfig.coreOutline
         if (data.novelConfig.worldSetting) updateData.worldbuilding = data.novelConfig.worldSetting
         if (data.novelConfig.protagonistProfile) updateData.charactersArch = data.novelConfig.protagonistProfile
+        // v0.2.1: 同时传递 AI 生成字段（synopsis/worldbuilding/charactersArch 存于 novelConfig）
+        const nc = data.novelConfig as Record<string, unknown>
+        if (nc.synopsis) updateData.synopsis = nc.synopsis as string
+        if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding as string
+        if (nc.charactersArch) updateData.charactersArch = nc.charactersArch as string
         ProjectCoreRepository.update(updateData)
       }
 
@@ -204,6 +209,11 @@ export function registerProjectController() {
         if (data.novelConfig.coreOutline) updateData.synopsis = data.novelConfig.coreOutline
         if (data.novelConfig.worldSetting) updateData.worldbuilding = data.novelConfig.worldSetting
         if (data.novelConfig.protagonistProfile) updateData.charactersArch = data.novelConfig.protagonistProfile
+        // v0.2.1: 同时传递 AI 生成字段（synopsis/worldbuilding/charactersArch 存于 novelConfig）
+        const nc = data.novelConfig as Record<string, unknown>
+        if (nc.synopsis) updateData.synopsis = nc.synopsis as string
+        if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding as string
+        if (nc.charactersArch) updateData.charactersArch = nc.charactersArch as string
         ProjectCoreRepository.update(updateData)
       }
       return { success: true }
