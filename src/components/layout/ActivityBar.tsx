@@ -9,6 +9,9 @@ import {
   X,
   Home,
   ChevronRight,
+  GitBranch,
+  Workflow,
+  MessageSquareText,
 } from 'lucide-react'
 import { useLayoutStore, type SidebarView } from '../../stores/layout-store'
 import { useProjectStore } from '../../stores/project-store'
@@ -23,6 +26,10 @@ const activities: Array<{ id: SidebarView; icon: typeof FolderOpen; label: strin
   { id: 'project', icon: FolderOpen, label: '项目结构' },
   { id: 'knowledge', icon: BookOpen, label: '知识库' },
   { id: 'characters', icon: Users, label: '角色管理' },
+  // v0.2.0 新增
+  { id: 'architecture', icon: GitBranch, label: '故事架构' },
+  { id: 'workflow', icon: Workflow, label: '工作流' },
+  { id: 'review', icon: MessageSquareText, label: '审稿' },
 ]
 
 export default function ActivityBar() {

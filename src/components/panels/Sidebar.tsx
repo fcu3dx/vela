@@ -12,6 +12,9 @@ import KnowledgePanel from './KnowledgePanel'
 import HomeSidebarPanel from './sidebar/HomeSidebarPanel'
 import ProjectTree from './sidebar/ProjectTree'
 import CharactersView from './sidebar/CharactersView'
+import ArchitecturePanel from './sidebar/ArchitecturePanel'
+import WorkflowPanel from './sidebar/WorkflowPanel'
+import ReviewPanel from './sidebar/ReviewPanel'
 import {
   registerMenuSetter, unregisterMenuSetter,
   type SidebarMenuState,
@@ -30,10 +33,13 @@ export default function Sidebar() {
   }, [])
 
   const viewTitles: Record<string, string> = {
-    home:       '主页',
-    project:    '项目结构',
-    knowledge:  '知识库',
-    characters: '角色管理',
+    home:         '主页',
+    project:      '项目结构',
+    knowledge:    '知识库',
+    characters:   '角色管理',
+    architecture: '故事架构',
+    workflow:     '工作流',
+    review:       '审稿',
   }
 
   return (
@@ -48,10 +54,13 @@ export default function Sidebar() {
         <span>{viewTitles[sidebarView]}</span>
       </div>
       <div className="flex-1 overflow-y-auto py-1">
-        {sidebarView === 'home'       && <HomeSidebarPanel />}
-        {sidebarView === 'project'    && <ProjectTree />}
-        {sidebarView === 'knowledge'  && <KnowledgePanel />}
-        {sidebarView === 'characters' && <CharactersView />}
+        {sidebarView === 'home'         && <HomeSidebarPanel />}
+        {sidebarView === 'project'      && <ProjectTree />}
+        {sidebarView === 'knowledge'    && <KnowledgePanel />}
+        {sidebarView === 'characters'   && <CharactersView />}
+        {sidebarView === 'architecture' && <ArchitecturePanel />}
+        {sidebarView === 'workflow'     && <WorkflowPanel />}
+        {sidebarView === 'review'       && <ReviewPanel />}
       </div>
 
       {/* 动态右键菜单 */}
