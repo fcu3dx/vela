@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useLLMStore } from '../../stores/llm-store'
 import AgentHeader from './agent/AgentHeader'
 import AgentConversation from './agent/AgentConversation'
-import AgentSelector from './agent/AgentSelector'
 
 /**
  * 右侧 AI Agent 面板

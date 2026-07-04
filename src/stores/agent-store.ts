@@ -7,7 +7,6 @@ import { skillRegistry } from '../services/agent/skill-registry'
 import { parseSlashCommand, parseMentions, mentionsToToolCalls } from '../services/agent/intent-router'
 import { toolRegistry } from '../services/agent/tool-registry'
 import { agentRegistry } from '../services/agent/agent-registry'
-import { routeIntent } from '../services/agent/agent-orchestrator'
 import type { AgentRole } from '../shared/agent-types'
 import type { ToolArtifact } from '../services/agent/tool-registry'
 
