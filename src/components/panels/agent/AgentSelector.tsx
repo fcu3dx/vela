@@ -1,8 +1,8 @@
 /**
- * AgentSelector — Agent 角色选择下拉组件
+ * AgentSelector -- Agent 角色选择下拉组件
  *
- * 挂在 AI 面板顶部 AgentHeader 中，允许用户切换当前的 Agent 角色。
- * 模式：compact（仅显示 emoji+名称的下拉按钮）
+ * 挂在 AI 面板顶部 AgentHeader 中, 允许用户切换当前的 Agent 角色。
+ * 模式: compact(仅显示 emoji+名称的下拉按钮)
  */
 
 import { useState, useRef } from 'react'

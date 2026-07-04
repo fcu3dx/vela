@@ -8,8 +8,8 @@
  * 4. 结果合并: 多 Agent 输出汇总
  *
  * 与 agent-engine.ts 的关系: 
- * - agent-engine.ts 负责单 Agent 的 ReAct 循环（不变）
- * - agent-orchestrator.ts 负责多 Agent 的调度（新增层）
+ * - agent-engine.ts 负责单 Agent 的 ReAct 循环(不变)
+ * - agent-orchestrator.ts 负责多 Agent 的调度(新增层)
  */
 
 import { agentRegistry } from './agent-registry'
@@ -23,15 +23,15 @@ import type { AgentProfile } from '../../shared/agent-types'
  * 根据用户输入路由到最合适的 Agent + Skill
  *
  * 路由优先级: 
- * 1. 显式 Skill 调用（以 / 开头）-> Skill 关联的 Agent
+ * 1. 显式 Skill 调用(以 / 开头)-> Skill 关联的 Agent
  * 2. 自然语言 Agent 触发词 -> 匹配的 Agent
- * 3. 自然语言 Skill 触发（whenToUse 匹配）-> Skill 关联的 Agent
+ * 3. 自然语言 Skill 触发(whenToUse 匹配)-> Skill 关联的 Agent
  * 4. 默认 fallback -> general Agent
  */
 export function routeIntent(input: string): AgentRouteResult {
   const trimmed = input.trim()
 
-  // 优先级 1: 检查 / 命令（Skill 显式调用）
+  // 优先级 1: 检查 / 命令(Skill 显式调用)
   if (trimmed.startsWith('/')) {
     const cmdName = trimmed.slice(1).split(' ')[0]
     const skill = skillRegistry.get(cmdName)
@@ -79,7 +79,7 @@ export function routeIntent(input: string): AgentRouteResult {
   return {
     agent: agentRegistry.get('general')!,
     confidence: 0.5,
-    reason: '未匹配到特定 Agent/Skill，使用通用助手',
+    reason: '未匹配到特定 Agent/Skill, 使用通用助手',
   }
 }
 
@@ -113,7 +113,7 @@ function inferAgentFromSkill(skill: LoadedSkill): AgentProfile | null {
 }
 
 /**
- * 根据用户意图匹配 Skill（通过 Skill 的 whenToUse 字段）
+ * 根据用户意图匹配 Skill(通过 Skill 的 whenToUse 字段)
  */
 function matchSkillByIntent(input: string): LoadedSkill | null {
   const lower = input.toLowerCase()
@@ -125,7 +125,7 @@ function matchSkillByIntent(input: string): LoadedSkill | null {
     const whenToUse = skill.metadata.whenToUse.toLowerCase()
 
     // 简单关键词匹配打分
-    const keywords = whenToUse.split(/[,，、\s]+/).filter(Boolean)
+    const keywords = whenToUse.split(/[,, 、\s]+/).filter(Boolean)
     let score = 0
     for (const kw of keywords) {
       if (lower.includes(kw)) score++
@@ -150,9 +150,9 @@ function matchSkillByIntent(input: string): LoadedSkill | null {
  * 为指定 Agent 构建增强的系统提示词
  *
  * 结构: 
- * - Agent 角色系统提示词（核心）
- * - 推荐 Skill 列表（Agent 知道自己可以调用哪些 Skill）
- * - 工具系统提示词（由 context-builder.ts 追加）
+ * - Agent 角色系统提示词(核心)
+ * - 推荐 Skill 列表(Agent 知道自己可以调用哪些 Skill)
+ * - 工具系统提示词(由 context-builder.ts 追加)
  */
 export function buildAgentSystemPrompt(agent: AgentProfile): string {
   const sections: string[] = []
@@ -166,7 +166,7 @@ export function buildAgentSystemPrompt(agent: AgentProfile): string {
     for (const skillName of agent.recommendedSkills) {
       const skill = skillRegistry.get(skillName)
       if (skill) {
-        skillRefs.push(`- \`/${skillName}\` — ${skill.metadata.description}`)
+        skillRefs.push(`- \`/${skillName}\` -- ${skill.metadata.description}`)
       }
     }
     if (skillRefs.length > 0) {
@@ -174,7 +174,7 @@ export function buildAgentSystemPrompt(agent: AgentProfile): string {
     }
   }
 
-  // 3. 工具约束（如果有白名单）
+  // 3. 工具约束(如果有白名单)
   if (agent.toolWhitelist.length > 0) {
     sections.push(`\n## 可用工具限制\n你只能使用以下工具: ${agent.toolWhitelist.join(', ')}`)
   }

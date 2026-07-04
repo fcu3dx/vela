@@ -10,20 +10,20 @@
 
 /** Agent 角色标识 */
 export type AgentRole =
-  | 'general'             // 通用助手（默认，兼容原有行为）
+  | 'general'             // 通用助手(默认, 兼容原有行为)
   | 'story-architect'     // 故事架构师
   | 'character-designer'  // 角色设计师
   | 'narrative-writer'    // 叙事写手
   | 'consistency-checker' // 一致性检查器
   | 'story-explorer'      // 故事探索者
-  | 'critic'              // 评论者（深度对抗式批评）
-  | 'editor'              // 编辑（整体书编辑视角）
+  | 'critic'              // 评论者(深度对抗式批评)
+  | 'editor'              // 编辑(整体书编辑视角)
   | 'reader-sim'          // 读者模拟器
   | 'character-sim'       // 角色模拟器
-  | 'brainstormer'        // 脑暴者（创意选项生成）
+  | 'brainstormer'        // 脑暴者(创意选项生成)
   | 'outliner'            // 大纲师
   | 'style-creator'       // 风格创建器
-  | 'chronicler'          // 编年史家（事实提取）
+  | 'chronicler'          // 编年史家(事实提取)
 
 // ===== Agent 模型档位 =====
 
@@ -36,7 +36,7 @@ export type AgentModelTier = 'strong' | 'medium' | 'light' | 'any'
 export interface AgentProfile {
   /** Agent 角色标识 */
   role: AgentRole
-  /** 显示名称（中文） */
+  /** 显示名称(中文) */
   displayName: string
   /** 一句话描述 */
   description: string
@@ -44,11 +44,11 @@ export interface AgentProfile {
   emoji: string
   /** 推荐模型档位 */
   modelTier: AgentModelTier
-  /** 允许调用的工具名称白名单（空 = 全部可用） */
+  /** 允许调用的工具名称白名单(空 = 全部可用) */
   toolWhitelist: string[]
-  /** 系统提示词内容（Markdown） */
+  /** 系统提示词内容(Markdown) */
   systemPrompt: string
-  /** 触发关键词（用于自动路由） */
+  /** 触发关键词(用于自动路由) */
   triggerKeywords: string[]
   /** 关联的推荐 Skill */
   recommendedSkills: string[]
@@ -58,9 +58,9 @@ export interface AgentProfile {
 
 /** 意图路由结果 */
 export interface AgentRouteResult {
-  /** 匹配到的 Agent（可能为 general） */
+  /** 匹配到的 Agent(可能为 general) */
   agent: AgentProfile
-  /** 匹配到的 Skill（可选） */
+  /** 匹配到的 Skill(可选) */
   skill?: string
   /** 匹配置信度 0-1 */
   confidence: number
@@ -86,7 +86,7 @@ export interface AgentSpawnContext {
 
 // ===== Agent 角色中文别名路由表 =====
 
-/** 中文触发词 -> Agent 角色映射（用于自然语言路由） */
+/** 中文触发词 -> Agent 角色映射(用于自然语言路由) */
 export const AGENT_ALIAS_MAP: Record<string, AgentRole> = {
   // 架构相关
   '架构师': 'story-architect',
