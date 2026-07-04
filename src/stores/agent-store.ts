@@ -6,6 +6,9 @@ import { registerBuiltinTools } from '../services/agent/tools'
 import { skillRegistry } from '../services/agent/skill-registry'
 import { parseSlashCommand, parseMentions, mentionsToToolCalls } from '../services/agent/intent-router'
 import { toolRegistry } from '../services/agent/tool-registry'
+import { agentRegistry } from '../services/agent/agent-registry'
+import { routeIntent } from '../services/agent/agent-orchestrator'
+import type { AgentRole } from '../shared/agent-types'
 import type { ToolArtifact } from '../services/agent/tool-registry'
 
 // ===== 类型定义 =====
@@ -58,6 +61,8 @@ interface AgentState {
   activeRequestId: string | null
   /** Tool 系统是否已初始化 */
   toolsInitialized: boolean
+  /** 当前选择的 Agent 角色（默认 general） */
+  activeAgentId: AgentRole
 
   // ===== 计算属性（Getters） =====
   /** 获取当前活跃会话 */
@@ -82,6 +87,8 @@ interface AgentState {
   setMode: (mode: AgentMode) => void
   /** 设置当前会话使用的模型 */
   setModelId: (modelId: string | null) => void
+  /** 设置当前使用的 Agent 角色 */
+  setActiveAgent: (role: AgentRole) => void
   /** 发送消息（触发 Agent ReAct 循环） */
   sendMessage: (content: string) => Promise<void>
   /** 取消当前生成 */
@@ -148,6 +155,7 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
   generating: false,
   activeRequestId: null,
   toolsInitialized: false,
+  activeAgentId: 'general',
 
   getActiveConversation: () => {
     const { conversations, activeConversationId } = get()
@@ -233,6 +241,14 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
         c.id === conv.id ? { ...c, modelId } : c
       ),
     }))
+  },
+
+  setActiveAgent: (role) => {
+    // 确保 Agent Registry 已初始化
+    if (agentRegistry.size === 0) {
+      agentRegistry.init()
+    }
+    set({ activeAgentId: role })
   },
 
   sendMessage: async (content) => {

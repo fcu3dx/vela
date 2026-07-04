@@ -12,8 +12,10 @@
 import { useProjectStore } from '../../stores/project-store'
 import { useEditorStore } from '../../stores/editor-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
-import type { AgentMode } from '../../stores/agent-store'
+import { useAgentStore, type AgentMode } from '../../stores/agent-store'
 import { toolRegistry } from './tool-registry'
+import { agentRegistry } from './agent-registry'
+import { buildAgentSystemPrompt as buildAgentPrompt } from './agent-orchestrator'
 
 // ===== 上下文构建 =====
 
@@ -26,8 +28,18 @@ import { toolRegistry } from './tool-registry'
 export function buildAgentSystemPrompt(mode: AgentMode): string {
   const sections: string[] = []
 
-  // 1. Agent 身份与行为指导
-  sections.push(buildIdentityPrompt(mode))
+  // 0. Agent 角色身份（v0.2.0 新增）
+  const agentStore = useAgentStore.getState()
+  const activeAgentId = agentStore.activeAgentId
+  const activeAgent = agentRegistry.get(activeAgentId)
+
+  if (activeAgent && activeAgentId !== 'general') {
+    // 使用 Agent 专用的系统提示词
+    sections.push(buildAgentPrompt(activeAgent))
+  } else {
+    // 1. Agent 身份与行为指导
+    sections.push(buildIdentityPrompt(mode))
+  }
 
   // 2. L0 — 始终注入的项目上下文
   const l0 = buildL0ProjectContext()

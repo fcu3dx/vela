@@ -8,6 +8,7 @@ import { confirm } from '../../ui/Confirm'
 import { IconBtn } from '../../ui/IconBtn'
 import { MenuItem } from '../../ui/MenuItem'
 import { useOutsideClick } from '../../../hooks/useOutsideClick'
+import AgentSelector from './AgentSelector'
 
 /**
  * Agent 面板顶部工具栏
@@ -51,13 +52,8 @@ export default function AgentHeader() {
         borderBottom: '1px solid var(--color-border)',
       }}
     >
-      {/* 标题 */}
-      <div
-        className="flex min-w-0 items-center overflow-hidden text-ellipsis whitespace-nowrap gap-1"
-        style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', fontWeight: 500 }}
-      >
-        AGENT
-      </div>
+      {/* Agent 选择器 */}
+      <AgentSelector />
 
       {/* 右侧工具按钮组 */}
       <div className="flex items-center gap-1.5 px-0.5 flex-shrink-0">

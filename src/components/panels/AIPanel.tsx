@@ -2,11 +2,12 @@ import { useEffect } from 'react'
 import { useLLMStore } from '../../stores/llm-store'
 import AgentHeader from './agent/AgentHeader'
 import AgentConversation from './agent/AgentConversation'
+import AgentSelector from './agent/AgentSelector'
 
 /**
  * 右侧 AI Agent 面板
  * 重构后采用多会话管理架构，参考 Antigravity agent-side-panel 设计
- * - 顶部：AgentHeader（新建/历史/更多/关闭）
+ * - 顶部：AgentSelector（Agent角色选择）+ AgentHeader（新建/历史/更多/关闭）
  * - 主体：AgentConversation（空状态/对话/历史三态）
  */
 export default function AIPanel() {
