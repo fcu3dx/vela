@@ -115,13 +115,18 @@ export function registerProjectController() {
           wordsPerChapter: updatedCoreData.wordsPerChapter,
           plotStructure: updatedCoreData.plotStructure as 'three_act' | 'heros_journey' | 'save_the_cat' | 'kishotenketsu' | 'multi_thread' | 'freeform',
           narrativePOV: updatedCoreData.narrativePov as 'third_limited' | 'first_person' | 'third_omniscient' | 'multi_pov',
-          coreOutline: updatedCoreData.synopsis,      // 旧字段映射
-          worldSetting: updatedCoreData.worldbuilding, // 旧字段映射
+          coreOutline: updatedCoreData.synopsis || '',      // 向后兼容: synopsis → coreOutline
+          worldSetting: updatedCoreData.worldbuilding || '', // 向后兼容: worldbuilding → worldSetting
           goldenFinger: updatedCoreData.goldenFinger,
-          protagonistProfile: updatedCoreData.charactersArch, // 旧字段映射
+          protagonistProfile: updatedCoreData.charactersArch || '', // 向后兼容: charactersArch → protagonistProfile
           globalGuidance: updatedCoreData.globalGuidance,
           writingStyle: updatedCoreData.writingStyle,
           referenceWorks: updatedCoreData.referenceWorks,
+          // v0.2.1: 原始架构字段（避免 roundtrip 丢失）
+          synopsis: updatedCoreData.synopsis || '',
+          worldbuilding: updatedCoreData.worldbuilding || '',
+          charactersArch: updatedCoreData.charactersArch || '',
+          premise: updatedCoreData.premise || '',
         },
         characterStates: updatedCoreData.characterStates,
         createdAt: new Date().toISOString(), // db 中实际上有，但这里先 mock 一下时间避免前端报错

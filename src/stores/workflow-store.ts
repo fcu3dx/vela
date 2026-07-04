@@ -90,6 +90,8 @@ export interface WorkflowDefinition {
     name: string
     description: string
     executor: StepExecutor
+    /** v0.2.1: 失败时是否继续执行后续步骤（默认 false） */
+    continueOnError?: boolean
   }>
   /** 工作流完成后的通知/跳转动作（可选） */
   onComplete?: WorkflowCompleteAction
@@ -304,8 +306,13 @@ export const useWorkflowStore = create<WorkflowState>()((set, get) => ({
           error: errorMsg,
           completedAt: new Date().toISOString(),
         })
-        updateRunById(set, run.id, { status: 'failed' })
         get().addLog('error', `❌ [${definition.title}] 步骤失败: ${stepDef.name} — ${errorMsg}`)
+        // v0.2.1: continueOnError 步骤失败后继续后续步骤
+        if (stepDef.continueOnError) {
+          get().addLog('warn', `⏭ [${definition.title}] ${stepDef.name} 失败但继续执行后续步骤`)
+          continue
+        }
+        updateRunById(set, run.id, { status: 'failed' })
         break
       }
     }

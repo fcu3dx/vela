@@ -261,9 +261,15 @@ export class GeneratePlotArchitectureCommand extends BaseWorkflowCommand<string>
     const char_dyn = core?.charactersArch || ''
     const world_b = core?.worldbuilding || ''
 
-    if (!premise || premise.includes('待生成')) throw new Error('故事前提未生成')
-    if (!char_dyn || char_dyn.includes('待生成')) throw new Error('角色图谱未生成')
-    if (!world_b || world_b.includes('待生成')) throw new Error('世界观未生成')
+    if (!premise || premise.includes('待生成')) {
+      callbacks.log('⚠️ 故事前提缺失，情节大纲生成可能不完整')
+    }
+    if (!char_dyn || char_dyn.includes('待生成')) {
+      callbacks.log('⚠️ 角色图谱缺失，将基于故事前提单独生成')
+    }
+    if (!world_b || world_b.includes('待生成')) {
+      callbacks.log('⚠️ 世界观缺失，情节大纲将基于通用设定生成')
+    }
 
     callbacks.log('生成情节大纲...')
     const template = getPromptTemplate('synopsis')
@@ -274,9 +280,9 @@ export class GeneratePlotArchitectureCommand extends BaseWorkflowCommand<string>
     const pov = getNarrativePOVLabel(config.narrativePOV || 'third_limited')
 
     const promptBuilder = new ArchitecturePromptBuilder(template)
-      .withCoreSeed(premise)
-      .withCharacterDynamics(char_dyn)
-      .withWorldBuilding(world_b)
+      .withCoreSeed(premise || '（故事前提未生成，请根据类型和章节数构建默认起点）')
+      .withCharacterDynamics(char_dyn || '（角色图谱缺失，请根据故事前提推断典型角色配置）')
+      .withWorldBuilding(world_b || '（世界观未设定，请使用该类型的默认世界观）')
       .withGenre(config.genre)
       .withNumberOfChapters(config.totalChapters)
       .withWordNumber(config.wordsPerChapter)

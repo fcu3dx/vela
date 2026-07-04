@@ -18,7 +18,7 @@ export abstract class BaseWorkflowCommand<TResult = string> {
   /** 抽象执行入口 */
   abstract execute(params: CommandExecuteParams): Promise<TResult>
 
-  /** 获取 LLM 大模型连接代理（支持取消） */
+  /** 获取 LLM 大模型连接代理（支持取消 + v0.2.1 空值重试增强） */
   protected async callLLM(
     prompt: string, 
     systemPrompt: string, 
@@ -77,24 +77,25 @@ export abstract class BaseWorkflowCommand<TResult = string> {
             const raw = text || fullContent
             const cleaned = this.stripThinkingTags(raw)
             // v0.2.1: 空值保护 — LLM 可能 thinking 后无正文
-            if (!cleaned || cleaned.trim().length < 10) {
-              // 给一次自动重试：调整温度、重新请求
-              callbacks.log('⚠️ AI 返回内容为空或过短，正在自动重试 (第2次)...')
-              // 使用完全相同的参数重新生成一次
+            if (!cleaned || cleaned.trim().length < 50) {
+              // 给一次自动重试：追加 "直接输出" 指令，抑制 thinking
+              callbacks.log('⚠️ AI 返回内容为空或过短(不足50字)，正在自动重试 (第2次)...')
+              const retryMessages = [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: prompt },
+                { role: 'user', content: '(请直接输出正文，不要使用 reasoning/thinking 模式，不需要解释过程。请输出完整的、详细的内容。)' }
+              ]
+              const retryOptions = { ...options, thinking: false }
               llmStore.generateStream(
-                [
-                  { role: 'system', content: systemPrompt },
-                  { role: 'user', content: prompt },
-                  { role: 'user', content: '(请直接输出正文，不要使用 reasoning/thinking 模式，不需要解释过程)' }
-                ],
+                retryMessages,
                 {
                   onChunk: (chunk) => { fullContent += chunk; callbacks.appendText(chunk) },
                   onDone: (retryText) => {
                     const retryRaw = retryText || fullContent
                     const retryCleaned = this.stripThinkingTags(retryRaw)
-                    if (!retryCleaned || retryCleaned.trim().length < 10) {
-                      callbacks.log('❌ 重试后仍然空内容')
-                      reject(new Error('AI 连续两次返回空内容，请检查模型配置或缩短上下文'))
+                    if (!retryCleaned || retryCleaned.trim().length < 50) {
+                      callbacks.log('❌ 重试后仍不足50字')
+                      reject(new Error('AI 连续两次返回内容过短（不足50字），请检查模型配置或缩短上下文'))
                     } else {
                       callbacks.log('✅ 重试成功')
                       resolve(retryCleaned)
@@ -103,7 +104,7 @@ export abstract class BaseWorkflowCommand<TResult = string> {
                   onError: (err) => reject(new Error(err || '重试生成失败')),
                 },
                 undefined,
-                options
+                retryOptions
               )
               return
             }
@@ -145,10 +146,10 @@ export abstract class BaseWorkflowCommand<TResult = string> {
   }
 
   /**
-   * 去除 DeepSeek 等模型的 <think> 标签，保证落盘纯净
+   * 去除 DeepSeek 等模型的  thinking 标签，保证落盘纯净
    */
   protected stripThinkingTags(text: string): string {
-    return text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim()
+    return text.replace(/ thinking[\s\S]*?(?:<\/think>|$)/gi, '').trim()
   }
 
   /**
@@ -184,4 +185,3 @@ export abstract class BaseWorkflowCommand<TResult = string> {
     globalEventBus.emit('REFRESH_RESOURCE', { resources })
   }
 }
-

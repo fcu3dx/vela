@@ -48,6 +48,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       name: '故事前提',
       key: 'premise',
       description: stepDesc('premise', '提炼故事前提与核心卖点'),
+      continueOnError: false,  // 前提是根基，失败必须停止
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
         const { GenerateCoreSeedCommand } = await import('./commands/architecture.command')
@@ -58,6 +59,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       name: '角色图谱',
       key: 'characters',
       description: stepDesc('characters', '构建核心角色关系网与角色弧光'),
+      continueOnError: true,   // v0.2.1: 角色生成失败不阻断世界观和情节大纲
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
         const { GenerateCharactersCommand } = await import('./commands/architecture.command')
@@ -68,6 +70,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       name: '世界观',
       key: 'worldbuilding',
       description: stepDesc('worldbuilding', '构建自带冲突引擎的世界观矩阵'),
+      continueOnError: true,   // v0.2.1: 世界观失败不阻断情节大纲
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
         const { GenerateWorldBuildingCommand } = await import('./commands/architecture.command')
@@ -78,6 +81,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       name: '情节大纲',
       key: 'synopsis',
       description: stepDesc('synopsis', '整合所有碎片，按选定结构模式生成情节大纲'),
+      continueOnError: false,  // 情节大纲需要前置数据，但如果前面步骤continueOnError通过，它仍会尝试
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
         const { GeneratePlotArchitectureCommand } = await import('./commands/architecture.command')

@@ -174,6 +174,11 @@ export interface NovelConfig {
   globalGuidance: string
   writingStyle?: string
   referenceWorks?: string
+  // v0.2.1: 架构生成字段（AI 生成后存在 DB，必须在 novelConfig 中可读写）
+  synopsis?: string          // 情节大纲（DB synopsis，映射到 coreOutline）
+  worldbuilding?: string     // 世界观（DB worldbuilding，映射到 worldSetting）
+  charactersArch?: string    // 角色图谱（DB characters_arch，映射到 protagonistProfile）
+  premise?: string           // 故事前提（DB premise）
 }
 
 export interface FileNode {
