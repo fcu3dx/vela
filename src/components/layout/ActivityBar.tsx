@@ -12,6 +12,7 @@ import {
   GitBranch,
   Workflow,
   MessageSquareText,
+  Puzzle,
 } from 'lucide-react'
 import { useLayoutStore, type SidebarView } from '../../stores/layout-store'
 import { useProjectStore } from '../../stores/project-store'
@@ -30,6 +31,7 @@ const activities: Array<{ id: SidebarView; icon: typeof FolderOpen; label: strin
   { id: 'architecture', icon: GitBranch, label: '故事架构' },
   { id: 'workflow', icon: Workflow, label: '工作流' },
   { id: 'review', icon: MessageSquareText, label: '审稿' },
+  { id: 'skills', icon: Puzzle, label: '技能' },
 ]
 
 export default function ActivityBar() {
