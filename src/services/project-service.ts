@@ -125,6 +125,9 @@ export async function onProjectOpened(): Promise<void> {
   const project = useProjectStore.getState().currentProject
   if (!project) return
 
+  // v0.2.0: 确保标准项目目录存在（追踪/对标/拆文库）
+  await ensureStandardDirectories(project.path)
+
   // 并行加载角色卡和草稿列表
   await Promise.all([
     useCharacterStore.getState().load(),
@@ -135,6 +138,26 @@ export async function onProjectOpened(): Promise<void> {
   globalEventBus.emit('PROJECT_CHANGED', { projectPath: project.path })
 
   console.log('[ProjectService] 项目数据加载完成:', project.path)
+}
+
+/**
+ * v0.2.0: 确保项目标准目录结构完整
+ * 补建缺失的追踪/、对标/、拆文库/ 目录
+ */
+async function ensureStandardDirectories(projectPath: string): Promise<void> {
+  const dirs = [
+    '追踪',       // 上下文追踪 (上下文.md, 角色状态.md, 伏笔.md, 时间线.md)
+    '对标',       // 对标书拆解数据
+    '拆文库',     // 拆文分析产物
+  ]
+  for (const dir of dirs) {
+    const fullPath = `${projectPath}/${dir}`
+    const exists = await ipc.invoke('fs:check-exists', fullPath)
+    if (!exists) {
+      await ipc.invoke('fs:mkdir', fullPath)
+      console.log(`[ProjectService] 创建目录: ${fullPath}`)
+    }
+  }
 }
 
 /**
