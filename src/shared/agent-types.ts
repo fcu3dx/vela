@@ -1,9 +1,9 @@
 /**
  * Agent 类型定义
  *
- * 定义 Vela 多 Agent 协作体系中的核心类型：
- * - AgentProfile：每个专业 Agent 的元数据和配置
- * - AgentRole：13 个专业化写作角色
+ * 定义 Vela 多 Agent 协作体系中的核心类型: 
+ * - AgentProfile: 每个专业 Agent 的元数据和配置
+ * - AgentRole: 13 个专业化写作角色
  */
 
 // ===== Agent 角色枚举 =====
@@ -86,7 +86,7 @@ export interface AgentSpawnContext {
 
 // ===== Agent 角色中文别名路由表 =====
 
-/** 中文触发词 → Agent 角色映射（用于自然语言路由） */
+/** 中文触发词 -> Agent 角色映射（用于自然语言路由） */
 export const AGENT_ALIAS_MAP: Record<string, AgentRole> = {
   // 架构相关
   '架构师': 'story-architect',

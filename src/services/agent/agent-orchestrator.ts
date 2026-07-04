@@ -1,13 +1,13 @@
 /**
  * Agent 调度器
  *
- * 负责：
- * 1. 意图路由：根据用户输入匹配 Agent + Skill
- * 2. Agent 激活：切换当前会话的 Agent 角色
- * 3. 子 Agent 调度：在独立上下文中运行子 Agent
- * 4. 结果合并：多 Agent 输出汇总
+ * 负责: 
+ * 1. 意图路由: 根据用户输入匹配 Agent + Skill
+ * 2. Agent 激活: 切换当前会话的 Agent 角色
+ * 3. 子 Agent 调度: 在独立上下文中运行子 Agent
+ * 4. 结果合并: 多 Agent 输出汇总
  *
- * 与 agent-engine.ts 的关系：
+ * 与 agent-engine.ts 的关系: 
  * - agent-engine.ts 负责单 Agent 的 ReAct 循环（不变）
  * - agent-orchestrator.ts 负责多 Agent 的调度（新增层）
  */
@@ -22,16 +22,16 @@ import type { AgentProfile } from '../../shared/agent-types'
 /**
  * 根据用户输入路由到最合适的 Agent + Skill
  *
- * 路由优先级：
- * 1. 显式 Skill 调用（以 / 开头）→ Skill 关联的 Agent
- * 2. 自然语言 Agent 触发词 → 匹配的 Agent
- * 3. 自然语言 Skill 触发（whenToUse 匹配）→ Skill 关联的 Agent
- * 4. 默认 fallback → general Agent
+ * 路由优先级: 
+ * 1. 显式 Skill 调用（以 / 开头）-> Skill 关联的 Agent
+ * 2. 自然语言 Agent 触发词 -> 匹配的 Agent
+ * 3. 自然语言 Skill 触发（whenToUse 匹配）-> Skill 关联的 Agent
+ * 4. 默认 fallback -> general Agent
  */
 export function routeIntent(input: string): AgentRouteResult {
   const trimmed = input.trim()
 
-  // 优先级 1：检查 / 命令（Skill 显式调用）
+  // 优先级 1: 检查 / 命令（Skill 显式调用）
   if (trimmed.startsWith('/')) {
     const cmdName = trimmed.slice(1).split(' ')[0]
     const skill = skillRegistry.get(cmdName)
@@ -47,7 +47,7 @@ export function routeIntent(input: string): AgentRouteResult {
     }
   }
 
-  // 优先级 2：自然语言 Agent 触发词
+  // 优先级 2: 自然语言 Agent 触发词
   const aliasRole = lookupAgentByAlias(trimmed)
   if (aliasRole) {
     const agent = agentRegistry.get(aliasRole)
@@ -63,7 +63,7 @@ export function routeIntent(input: string): AgentRouteResult {
     }
   }
 
-  // 优先级 3：Skill whenToUse 匹配
+  // 优先级 3: Skill whenToUse 匹配
   const matchedSkill = matchSkillByIntent(trimmed)
   if (matchedSkill) {
     const agent = inferAgentFromSkill(matchedSkill) ?? agentRegistry.get('general')!
@@ -75,7 +75,7 @@ export function routeIntent(input: string): AgentRouteResult {
     }
   }
 
-  // 优先级 4：默认 fallback
+  // 优先级 4: 默认 fallback
   return {
     agent: agentRegistry.get('general')!,
     confidence: 0.5,
@@ -140,7 +140,7 @@ function matchSkillByIntent(input: string): LoadedSkill | null {
     }
   }
 
-  // 阈值：至少匹配 1 个关键词
+  // 阈值: 至少匹配 1 个关键词
   return bestScore >= 1 ? bestMatch : null
 }
 
@@ -149,7 +149,7 @@ function matchSkillByIntent(input: string): LoadedSkill | null {
 /**
  * 为指定 Agent 构建增强的系统提示词
  *
- * 结构：
+ * 结构: 
  * - Agent 角色系统提示词（核心）
  * - 推荐 Skill 列表（Agent 知道自己可以调用哪些 Skill）
  * - 工具系统提示词（由 context-builder.ts 追加）
@@ -170,13 +170,13 @@ export function buildAgentSystemPrompt(agent: AgentProfile): string {
       }
     }
     if (skillRefs.length > 0) {
-      sections.push(`\n## 推荐使用的技能\n你可以通过 / 命令调用以下专业技能来获取更详细的工作指导：\n${skillRefs.join('\n')}`)
+      sections.push(`\n## 推荐使用的技能\n你可以通过 / 命令调用以下专业技能来获取更详细的工作指导: \n${skillRefs.join('\n')}`)
     }
   }
 
   // 3. 工具约束（如果有白名单）
   if (agent.toolWhitelist.length > 0) {
-    sections.push(`\n## 可用工具限制\n你只能使用以下工具：${agent.toolWhitelist.join(', ')}`)
+    sections.push(`\n## 可用工具限制\n你只能使用以下工具: ${agent.toolWhitelist.join(', ')}`)
   }
 
   return sections.join('\n')
