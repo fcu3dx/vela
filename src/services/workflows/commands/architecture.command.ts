@@ -33,7 +33,7 @@ function getNovelConfig(): { project: NonNullable<ReturnType<typeof useProjectSt
 }
 
 function stripThinkingTags(text: string): string {
-  return text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim()
+  return text.replace(/ thinking[\s\S]*?(?:<\/think>|$)/gi, '').trim()
 }
 
 async function writeArchToDb(key: 'premise' | 'charactersArch' | 'worldbuilding' | 'synopsis', content: string): Promise<void> {
@@ -230,6 +230,10 @@ export class GenerateWorldBuildingCommand extends BaseWorkflowCommand<string> {
       .withStepGuidance(((context.data.stepGuidance as Record<string, string>) || {}).worldbuilding || '')
 
     const result = await this.callLLMWithBuilder(promptBuilder, callbacks, undefined, context)
+    if (!result || !result.trim()) {
+      callbacks.log('❌ AI 返回的世界观内容为空')
+      throw new Error('世界观生成失败: AI 返回空内容，请检查模型配置或重试')
+    }
     if (context.cancelled) throw new Error('工作流已取消')
 
     await writeArchToDb('worldbuilding', `# 世界观\n\n${result}\n`)
@@ -282,6 +286,10 @@ export class GeneratePlotArchitectureCommand extends BaseWorkflowCommand<string>
       .withStepGuidance(((context.data.stepGuidance as Record<string, string>) || {}).synopsis || '')
 
     const result = await this.callLLMWithBuilder(promptBuilder, callbacks, undefined, context)
+    if (!result || !result.trim()) {
+      callbacks.log('❌ AI 返回的情节大纲内容为空')
+      throw new Error('情节大纲生成失败: AI 返回空内容，请检查模型配置或重试')
+    }
     if (context.cancelled) throw new Error('工作流已取消')
 
     await writeArchToDb('synopsis', `# 情节大纲\n\n${result}\n`)

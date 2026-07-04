@@ -69,7 +69,6 @@ export abstract class BaseWorkflowCommand<TResult = string> {
           },
           onDone: (text) => {
             cleanup()
-            // 取消后不 resolve，让 reject 生效
             if (context?.cancelled) {
               reject(new Error('工作流已取消'))
               return
@@ -77,6 +76,37 @@ export abstract class BaseWorkflowCommand<TResult = string> {
             callbacks.setProgress(90)
             const raw = text || fullContent
             const cleaned = this.stripThinkingTags(raw)
+            // v0.2.1: 空值保护 — LLM 可能 thinking 后无正文
+            if (!cleaned || cleaned.trim().length < 10) {
+              // 给一次自动重试：调整温度、重新请求
+              callbacks.log('⚠️ AI 返回内容为空或过短，正在自动重试 (第2次)...')
+              // 使用完全相同的参数重新生成一次
+              llmStore.generateStream(
+                [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: prompt },
+                  { role: 'user', content: '(请直接输出正文，不要使用 reasoning/thinking 模式，不需要解释过程)' }
+                ],
+                {
+                  onChunk: (chunk) => { fullContent += chunk; callbacks.appendText(chunk) },
+                  onDone: (retryText) => {
+                    const retryRaw = retryText || fullContent
+                    const retryCleaned = this.stripThinkingTags(retryRaw)
+                    if (!retryCleaned || retryCleaned.trim().length < 10) {
+                      callbacks.log('❌ 重试后仍然空内容')
+                      reject(new Error('AI 连续两次返回空内容，请检查模型配置或缩短上下文'))
+                    } else {
+                      callbacks.log('✅ 重试成功')
+                      resolve(retryCleaned)
+                    }
+                  },
+                  onError: (err) => reject(new Error(err || '重试生成失败')),
+                },
+                undefined,
+                options
+              )
+              return
+            }
             resolve(cleaned)
           },
           onError: (err) => {

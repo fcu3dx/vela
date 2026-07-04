@@ -53,6 +53,97 @@ export interface LoadedSkill {
   filePath: string
 }
 
+// ===== Skill 输出落地映射 =====
+
+/**
+ * Skill 输出落地映射 -- v0.2.1
+ *
+ * 每个 Skill 生成的内容自动保存到项目文件系统的对应目录，
+ * 不再停留在 AI 对话面板中需手动复制。
+ */
+const SKILL_OUTPUT_MAP: Record<string, { dir: string; file: string }> = {
+  // 架构相关 -> 02_architecture/
+  'novel-outline':      { dir: '02_architecture', file: '大纲.md' },
+  'story-memory':       { dir: '02_architecture', file: '故事记忆.md' },
+  'brainstorm':         { dir: '02_architecture', file: '脑暴创意.md' },
+  // 角色相关 -> 03_characters/
+  'character-analysis': { dir: '03_characters', file: '角色分析.md' },
+  'character-sim':      { dir: '03_characters', file: '角色对话记录.md' },
+  // 草稿/正文 -> 04_drafts/
+  'novel-draft':        { dir: '04_drafts', file: '正文续写.md' },
+  'short-write':        { dir: '04_drafts', file: '短篇正文.md' },
+  // 审稿 -> 审稿/（输出带修稿触发标记）
+  'review-chapter':     { dir: '审稿', file: '章节审稿报告.md' },
+  'multi-review':       { dir: '审稿', file: '多视角审稿报告.md' },
+  'continuity-check':   { dir: '审稿', file: '一致性检查报告.md' },
+  // 拆文/扫榜 -> 拆文库/
+  'novel-analyze':      { dir: '拆文库', file: '拆文分析.md' },
+  'short-analyze':      { dir: '拆文库', file: '短篇拆文.md' },
+  'market-scan':        { dir: '拆文库', file: '市场扫榜.md' },
+  // 风格/写作 -> 追踪/
+  'style-creator':      { dir: '追踪', file: '风格参考.md' },
+  'writing-modes':      { dir: '追踪', file: '写作模式配置.md' },
+  'writing-principles': { dir: '追踪', file: '写作原则.md' },
+  'llm-discipline':     { dir: '追踪', file: 'LLM语言纪律.md' },
+  // 工具类 -> 02_architecture/
+  'novel-import':       { dir: '02_architecture', file: '导入数据.md' },
+  'cover-gen':          { dir: '02_architecture', file: '封面方案.md' },
+  'research-assist':    { dir: '02_architecture', file: '研究笔记.md' },
+  // 教练/读者 -> 追踪/
+  'writing-coach':      { dir: '追踪', file: '写作教练建议.md' },
+  'reader-sim':         { dir: '追踪', file: '读者反馈模拟.md' },
+  // 去AI味 -> 不自动落地 (需要用户确认覆盖原稿)
+  'deai-filter':        { dir: '', file: '' },
+}
+
+/**
+ * 根据 Skill 名称将生成内容落地到项目文件系统
+ * 返回保存路径或 null
+ */
+async function saveSkillOutput(skillName: string, content: string): Promise<string | null> {
+  const mapping = SKILL_OUTPUT_MAP[skillName]
+  if (!mapping || !mapping.dir) return null
+
+  try {
+    const { useProjectStore } = await import('../../stores/project-store')
+    const project = useProjectStore.getState().currentProject
+    if (!project) return null
+
+    const { ipc } = await import('../ipc-client')
+
+    // 确保目录存在
+    const dirPath = `${project.path}/${mapping.dir}`
+    const dirExists = await ipc.invoke('fs:check-exists', dirPath)
+    if (!dirExists) {
+      await ipc.invoke('fs:mkdir', dirPath)
+    }
+
+    // 审稿类 Skill 外加修稿闭环提示
+    const reviewSkills = ['review-chapter', 'multi-review', 'continuity-check']
+    const contentToSave = reviewSkills.includes(skillName)
+      ? content + '\n\n---\n## 修稿操作\n\n发现以上问题后，可通过以下方式触发修稿:\n- 在 AI 面板中输入 `/deai-filter` 对目标章节进行去 AI 味处理\n- 输入 `/novel-draft` 并指定章节号进行局部重写\n- 切换到 "叙事写手" Agent 后提供具体修改指令\n'
+      : content
+
+    // 写入文件（追加模式，保留历史）
+    const filePath = `${dirPath}/${mapping.file}`
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    const header = `\n---\n## ${timestamp}\n\n`
+    const fileExists = await ipc.invoke('fs:check-exists', filePath)
+
+    if (fileExists) {
+      const existing = await ipc.invoke('fs:read-file', filePath)
+      const newContent = (existing.success ? existing.content : '') + header + contentToSave
+      await ipc.invoke('fs:write-file', filePath, newContent)
+    } else {
+      await ipc.invoke('fs:write-file', filePath, contentToSave)
+    }
+
+    return `${mapping.dir}/${mapping.file}`
+  } catch {
+    return null
+  }
+}
+
 // ===== Skill Registry =====
 
 class SkillRegistryImpl {
@@ -194,9 +285,16 @@ class SkillRegistryImpl {
           }
           content = content.replace(/\$\{SKILL_DIR\}/g, skill.baseDir)
 
+          // v0.2.1: Skill 输出落地 -- 根据 Skill 类型自动写入项目文件
+          const saveResult = await saveSkillOutput(skill.metadata.name, content)
+
+          const footer = saveResult
+            ? `\n\n> 📁 已自动保存至: ${saveResult}`
+            : ''
+
           return {
             success: true,
-            content: `[Skill: ${skill.metadata.displayName ?? skill.metadata.name}]\n\n${content}`,
+            content: `[Skill: ${skill.metadata.displayName ?? skill.metadata.name}]\n\n${content}${footer}`,
           }
         },
       }
