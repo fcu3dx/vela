@@ -1,16 +1,57 @@
 /**
  * WorkflowPanel — 工作流侧边栏面板
  *
- * 展示可用的工作流（大纲搭建、正文写作、审稿流程等），
- * 支持一键启动工作流。v0.2.0 新增，后续迭代充实。
+ * v0.2.2 重写：展示可启动的工作流，一键触发。
  */
 
+import { Play, GitBranch, FileEdit, Eye, Users } from 'lucide-react'
+import { useWorkflowStore } from '../../../stores/workflow-store'
+import { createReviewWorkflow } from '../../../services/workflows/review-workflow'
+
+interface WorkflowItem {
+  name: string
+  desc: string
+  icon: typeof Play
+  color: string
+  action: () => void
+}
+
 export default function WorkflowPanel() {
-  const workflows = [
-    { name: '大纲搭建', desc: '选题 → 核心设定 → 卷级大纲 → 细纲' },
-    { name: '正文写作', desc: '加载细纲 → 日更续写 → 更新追踪' },
-    { name: '审稿流程', desc: '评论者审阅 → 去AI味 → 一致性检查' },
-    { name: '角色开发', desc: '角色设计 → 对话模拟 → 读者验证' },
+  const startWorkflow = useWorkflowStore(s => s.startWorkflow)
+  const activeRun = useWorkflowStore(s => s.activeRun)
+  const isRunning = activeRun !== null
+
+  const workflows: WorkflowItem[] = [
+    {
+      name: '大纲搭建',
+      desc: '选题 → 核心设定 → 卷级大纲 → 细纲',
+      icon: GitBranch,
+      color: '#3b82f6',
+      action: () => {},
+    },
+    {
+      name: '正文写作',
+      desc: '加载细纲 → 日更续写 → 更新追踪',
+      icon: FileEdit,
+      color: '#22c55e',
+      action: () => {},
+    },
+    {
+      name: '多视角审稿',
+      desc: '结构/角色/文字/设定四维对抗式审查',
+      icon: Eye,
+      color: '#f59e0b',
+      action: () => {
+        startWorkflow(createReviewWorkflow({ dimensions: ['structure', 'character', 'writing', 'setting'] }))
+      },
+    },
+    {
+      name: '角色开发',
+      desc: '角色设计 → 对话模拟 → 读者验证',
+      icon: Users,
+      color: '#a855f7',
+      action: () => {},
+    },
   ]
 
   return (
@@ -19,24 +60,57 @@ export default function WorkflowPanel() {
         <h3 className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
           工作流
         </h3>
-        <p className="text-xs mt-1 mb-3" style={{ color: 'var(--color-text-muted)' }}>
-          切换 Agent 角色以启动对应工作流
+        <p className="text-[0.65rem] mt-1 mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          一键启动完整写作流程
         </p>
-        {workflows.map((wf, i) => (
-          <div
-            key={i}
-            className="mb-2 p-2 rounded-md"
-            style={{ backgroundColor: 'var(--color-hover)' }}
-          >
-            <div className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>
-              {wf.name}
-            </div>
-            <div className="text-[0.65rem] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              {wf.desc}
-            </div>
-          </div>
-        ))}
+        <div className="space-y-1.5">
+          {workflows.map((wf, i) => {
+            const Icon = wf.icon
+            return (
+              <button
+                key={i}
+                onClick={wf.action}
+                disabled={isRunning}
+                className="w-full text-left p-2 rounded-lg transition-all hover:scale-[1.01] active:scale-[0.98] flex items-start gap-2"
+                style={{
+                  backgroundColor: isRunning ? 'var(--color-hover)' : 'var(--color-panel)',
+                  border: '1px solid var(--color-border)',
+                  opacity: isRunning ? 0.5 : 1,
+                  cursor: isRunning ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <div
+                  className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center mt-0.5"
+                  style={{ backgroundColor: `${wf.color}20` }}
+                >
+                  <Icon size={14} style={{ color: wf.color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>
+                      {wf.name}
+                    </span>
+                    {wf.name === '多视角审稿' && !isRunning && (
+                      <Play size={10} style={{ color: wf.color }} />
+                    )}
+                  </div>
+                  <div className="text-[0.6rem] mt-0.5 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+                    {wf.desc}
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
+      {isRunning && (
+        <div
+          className="text-[0.6rem] px-3 py-1.5"
+          style={{ color: 'var(--color-accent)', borderTop: '1px solid var(--color-border)' }}
+        >
+          ⏳ 工作流执行中...
+        </div>
+      )}
       <div className="flex-1" />
     </div>
   )

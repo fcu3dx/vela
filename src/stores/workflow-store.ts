@@ -45,6 +45,7 @@ export type WorkflowType =
   | 'config_generation'       // 智能配置生成
   | 'post_process'            // 后处理任务（角色卡提取等）
   | 'novel_import'            // 导入已有小说（逆向推演全流程）
+  | 'multi-review'            // v0.2.2: 多视角审稿
 
 /** 工作流步骤执行器 */
 export type StepExecutor = (
