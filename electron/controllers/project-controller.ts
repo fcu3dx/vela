@@ -39,6 +39,15 @@ export function registerProjectController() {
       fs.mkdirSync(path.join(projectDir, DIR_VELA_INTERNAL), { recursive: true })
       fs.mkdirSync(path.join(projectDir, DIR_PROMPTS), { recursive: true })
 
+      // v0.2.2: 创建项目文件结构（对标/拆文库/追踪/参考资料）
+      fs.mkdirSync(path.join(projectDir, '设定'), { recursive: true })
+      fs.mkdirSync(path.join(projectDir, '大纲'), { recursive: true })
+      fs.mkdirSync(path.join(projectDir, '正文'), { recursive: true })
+      fs.mkdirSync(path.join(projectDir, '对标'), { recursive: true })
+      fs.mkdirSync(path.join(projectDir, '拆文库'), { recursive: true })
+      fs.mkdirSync(path.join(projectDir, '追踪'), { recursive: true })
+      fs.mkdirSync(path.join(projectDir, '参考资料'), { recursive: true })
+
       // 初始化 DB 底座
       initProjectDatabase(projectDir)
 

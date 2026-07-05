@@ -39,15 +39,20 @@ function classifySkill(skill: LoadedSkill): string {
     'market-scan', 'novel-import', 'cover-gen', 'llm-discipline',
     'short-write', 'short-analyze', 'research-assist',
   ]
-  // 经典 5
+  // 经典工具 5
   const classic = [
     'review-chapter', 'brainstorm', 'character-analysis',
     'continuity-check', 'writing-coach',
+  ]
+  // 基础工具 2
+  const utility = [
+    'project-init', 'writing-toolbox',
   ]
 
   if (core.includes(name)) return 'core'
   if (advanced.includes(name)) return 'advanced'
   if (classic.includes(name)) return 'classic'
+  if (utility.includes(name)) return 'utility'
   return 'utility'
 }
 

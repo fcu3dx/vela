@@ -1,10 +1,86 @@
 import { useEffect, useRef, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, ChevronDown, Sparkles } from 'lucide-react'
 import { useAgentStore } from '../../../stores/agent-store'
 import { useLayoutStore } from '../../../stores/layout-store'
 import AgentMessage from './AgentMessage'
 import AgentInputBox from './AgentInputBox'
 import { formatRelativeTime } from '../../../utils/time'
+import { useOutsideClick } from '../../../hooks/useOutsideClick'
+import { agentRegistry } from '../../../services/agent/agent-registry'
+
+/** Agent 徽标映射 */
+const AGENT_EMOJI: Record<string, string> = {
+  'general': '🤖', 'story-architect': '🏗️', 'character-designer': '🎭',
+  'narrative-writer': '✍️', 'consistency-checker': '🔍', 'story-explorer': '🧭',
+  'critic': '🔪', 'editor': '📝', 'reader-sim': '👁️', 'character-sim': '🎪',
+  'brainstormer': '💡', 'outliner': '📋', 'style-creator': '🎨', 'chronicler': '📜',
+}
+
+/**
+ * Agent 顶部选择器 — AI 面板顶部的 Agent 选择下拉
+ */
+function AgentSelector() {
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<string>('general')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useOutsideClick(ref, () => setOpen(false))
+
+  const agents = agentRegistry.listAll()
+  const current = agents.find(a => a.role === selected)
+
+  return (
+    <div ref={ref} className="relative px-3 pt-2 pb-1">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 text-xs rounded-md px-2 py-1 transition-colors w-full"
+        style={{
+          color: 'var(--color-text-secondary)',
+          backgroundColor: 'var(--color-hover)',
+        }}
+      >
+        <Sparkles size={13} />
+        <span>{AGENT_EMOJI[selected] || '🤖'} {current?.displayName || '通用助手'}</span>
+        <ChevronDown size={12} className="ml-auto" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-3 right-3 top-full z-50 mt-0.5 py-1 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          style={{
+            backgroundColor: 'var(--color-sidebar)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          }}
+        >
+          {agents.map(agent => (
+            <button
+              key={agent.role}
+              onClick={() => {
+                setSelected(agent.role)
+                setOpen(false)
+                useAgentStore.getState().sendMessage(`/agent ${agent.role}`)
+              }}
+              className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors hover:opacity-80"
+              style={{
+                color: selected === agent.role ? 'var(--color-accent)' : 'var(--color-text)',
+                backgroundColor: selected === agent.role ? 'var(--color-hover)' : 'transparent',
+              }}
+            >
+              <span className="text-sm">{AGENT_EMOJI[agent.role] || '🤖'}</span>
+              <div className="flex-1 min-w-0">
+                <div className="truncate font-medium">{agent.displayName}</div>
+                <div className="text-[0.6rem] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                  {agent.description?.slice(0, 60)}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 /**
  * 对话区域主组件
@@ -42,6 +118,8 @@ function EmptyState() {
 
   return (
     <div className="h-full overflow-y-auto">
+      {/* Agent 顶部选择器 */}
+      <AgentSelector />
       <div
         className="px-4"
         style={{ paddingTop: 'max(22vh, 48px)', paddingBottom: 24 }}
@@ -135,6 +213,8 @@ function ActiveConversation() {
 
   return (
     <div className="flex flex-col h-full relative">
+      {/* Agent 顶部选择器 */}
+      <AgentSelector />
       {/* 消息列表滚动区 */}
       <div
         ref={scrollRef}
