@@ -1,5 +1,44 @@
 # Vela 更新日志
 
+## v0.2.2 (2026-07-05)
+
+### 新增 — A: Skill 面板交互化
+
+- **点击即激活** (`src/components/panels/sidebar/SkillsPanel.tsx`)
+  - 点击 Skill 直接注入 AI 面板并发送 `/skill-name` 命令（取代旧版仅复制到剪贴板）
+  - 激活反馈：「✓ 已激活」绿色提示
+
+### 新增 — B: 多视角审稿工作流
+
+- **审稿工作流定义** (`src/services/workflows/review-workflow.ts`)
+  - 四维对抗式审查：结构/角色/文字/设定
+  - 支持选择审稿专家 Agent：默认（评论者）/ 评论者 / 读者模拟器 / 角色模拟器
+  - 自动读取当前编辑器打开的文件内容
+- **ReviewPanel 重写** (`src/components/panels/sidebar/ReviewPanel.tsx`)
+  - 维度勾选按钮（默认全选）
+  - 专家 Agent 下拉选择
+  - 运行按钮 + 工作流状态日志
+  - 结果展示：S1-S4 严重度统计 + 审稿原文
+
+### 新增 — C: 对标与拆文工作流
+
+- **拆文工作流定义** (`src/services/workflows/benchmark-workflow.ts`)
+  - 三种模式：长篇拆文 / 市场扫榜 / 导入分析
+  - 使用 novel-analyze / market-scan / novel-import Skill 提示词
+  - 支持专家 Agent：故事架构师 / 评论者 / 脑暴者
+- **WorkflowPanel 扩展** (`src/components/panels/sidebar/WorkflowPanel.tsx`)
+  - 新增「对标拆文」入口按钮
+  - 审稿按钮直连审稿工作流
+
+### 新增 — D: 工作流面板交互化
+
+- **WorkflowPanel 重写** (`src/components/panels/sidebar/WorkflowPanel.tsx`)
+  - 4 个工作流卡片：大纲搭建 / 正文写作 / 多视角审稿 / 角色开发
+  - 新增「对标拆文」卡片
+  - 点击即启动，直接触发对应工作流
+
+---
+
 ## v0.2.1 (2026-07-05)
 
 ### 新增 — 架构生成可选 Agent 专家
