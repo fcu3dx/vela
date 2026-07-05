@@ -4,9 +4,10 @@
  * v0.2.2 重写：展示可启动的工作流，一键触发。
  */
 
-import { Play, GitBranch, FileEdit, Eye, Users } from 'lucide-react'
+import { Play, GitBranch, FileEdit, Eye, Users, Search } from 'lucide-react'
 import { useWorkflowStore } from '../../../stores/workflow-store'
 import { createReviewWorkflow } from '../../../services/workflows/review-workflow'
+import { createBenchmarkWorkflow } from '../../../services/workflows/benchmark-workflow'
 
 interface WorkflowItem {
   name: string
@@ -43,6 +44,15 @@ export default function WorkflowPanel() {
       color: '#f59e0b',
       action: () => {
         startWorkflow(createReviewWorkflow({ dimensions: ['structure', 'character', 'writing', 'setting'] }))
+      },
+    },
+    {
+      name: '对标拆文',
+      desc: '长篇拆文/市场扫榜/导入分析',
+      icon: Search,
+      color: '#06b6d4',
+      action: () => {
+        startWorkflow(createBenchmarkWorkflow({ mode: 'analyze' }))
       },
     },
     {
