@@ -142,7 +142,18 @@ export abstract class BaseWorkflowCommand<TResult = string> {
     options?: { responseFormat?: { type: string }; thinking?: boolean },
     context?: WorkflowContext
   ): Promise<string> {
-    return this.callLLM(builder.build(), builder.getSystemRole(), callbacks, options, context)
+    // v0.2.0.x: 如果指定了 Agent，使用 Agent system prompt 而非模板默认 role
+    const agentRole = context?.data?.agentRole as string | undefined
+    let systemPrompt = builder.getSystemRole()
+    if (agentRole) {
+      const { agentRegistry } = await import('../../agent/agent-registry')
+      const profile = agentRegistry.get(agentRole as any)
+      if (profile) {
+        callbacks.log(`🎯 使用专家 Agent: ${profile.emoji} ${profile.displayName}`)
+        systemPrompt = profile.systemPrompt
+      }
+    }
+    return this.callLLM(builder.build(), systemPrompt, callbacks, options, context)
   }
 
   /**

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Wand2, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react'
+import { Wand2, AlertCircle, ChevronDown, ChevronRight, ChevronsUpDown } from 'lucide-react'
 import { useProjectStore } from '../../stores/project-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
 import { guardArchitectureGeneration, guardCharacterRegeneration } from '../../services/workflow-guards'
@@ -9,6 +9,7 @@ import {
 } from '../ui/Dialog'
 import { Button } from '../ui/Button'
 import { Textarea } from '../ui/Textarea'
+import type { AgentRole } from '../../shared/agent-types'
 
 type ArchStepKey = 'premise' | 'characters' | 'worldbuilding' | 'synopsis'
 
@@ -32,10 +33,18 @@ interface Props {
   archStatus: Record<string, boolean>
   /** 预先选中的步骤（单文件生成时传入） */
   initialSelectedSteps?: ArchStepKey[]
-  onConfirm: (selectedSteps: ArchStepKey[], stepGuidance: Record<string, string>) => void
+  onConfirm: (selectedSteps: ArchStepKey[], stepGuidance: Record<string, string>, agent?: AgentRole) => void
 }
 
-/** 生成架构确认弹框（含步骤勾选） */
+// 架构生成可选的 Agent 专家
+const ARCH_AGENTS: Array<{ role: AgentRole | ''; label: string; desc: string }> = [
+  { role: '',                label: '默认（故事架构师）', desc: '使用系统内置架构模板' },
+  { role: 'story-architect', label: '故事架构师',        desc: '浓缩核心卖点，构建冲突链与悬念骨架' },
+  { role: 'outliner',        label: '大纲师',            desc: '擅长结构化推演，严密的情节节奏编排' },
+  { role: 'brainstormer',    label: '脑暴者',            desc: '创意驱动，激进的情节设计与反转' },
+  { role: 'general',         label: '通用助手',          desc: '平衡创意与结构的通用模式' },
+]
+
 export default function ArchitectureConfirmDialog({
   isOpen, onClose, archStatus, initialSelectedSteps, onConfirm,
 }: Props) {
@@ -63,6 +72,8 @@ export default function ArchitectureConfirmDialog({
   const [stepGuidance, setStepGuidance] = useState<Record<string, string>>({})
   // 是否展开指导输入区
   const [showGuidance, setShowGuidance] = useState(false)
+  // v0.2.0.x: Agent 选择
+  const [selectedAgent, setSelectedAgent] = useState<AgentRole | ''>('')
 
   // 每次弹窗打开时重置选中状态
   const resetChecked = () => {
@@ -123,7 +134,7 @@ export default function ArchitectureConfirmDialog({
       }
 
       setGuardError(null)
-      onConfirm(selectedSteps, stepGuidance)
+      onConfirm(selectedSteps, stepGuidance, selectedAgent || undefined)
       onClose()
       const stepNames = selectedSteps.map(k => ARCH_FILES.find(f => f.key === k)?.label).filter(Boolean).join('、')
       toast.info(`✨ 已提交：正在生成${stepNames}...`)
@@ -279,6 +290,35 @@ export default function ArchitectureConfirmDialog({
               )}
             </div>
           )}
+
+          {/* v0.2.0.x: Agent 专家选择 */}
+          <div
+            className="rounded-lg p-3 space-y-2"
+            style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <ChevronsUpDown size={12} style={{ color: 'var(--color-text-muted)' }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                选择生成专家
+              </p>
+            </div>
+            <select
+              value={selectedAgent}
+              onChange={e => setSelectedAgent(e.target.value as AgentRole | '')}
+              className="w-full px-2 py-1.5 rounded text-xs outline-none"
+              style={{
+                backgroundColor: 'var(--color-input-bg)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              {ARCH_AGENTS.map(a => (
+                <option key={a.role} value={a.role}>
+                  {a.label} — {a.desc}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {noneSelected && (
             <p className="text-xs px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400">

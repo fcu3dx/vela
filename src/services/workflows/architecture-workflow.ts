@@ -24,6 +24,8 @@ export interface ArchitectureWorkflowParams {
   selectedSteps?: Array<'premise' | 'characters' | 'worldbuilding' | 'synopsis'>
   /** 每步的补充指导（如 { premise: "多强调金手指的限制" }） */
   stepGuidance?: Record<string, string>
+  /** v0.2.0.x: 指定生成专家 Agent */
+  agentRole?: import('../../shared/agent-types').AgentRole
 }
 
 export interface ConfigGenerationWorkflowParams {
@@ -42,6 +44,8 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
   const stepDesc = (key: string, defaultDesc: string) => sel.includes(key as never) ? defaultDesc : `（跳过，保留已有内容）`
   // 闭包捕获逐步指导，executor 中注入到 context.data
   const guidance = params.stepGuidance || {}
+  // v0.2.0.x: 指定 Agent 专家
+  const agentRole = params.agentRole
 
   const allSteps = [
     {
@@ -51,6 +55,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       continueOnError: false,  // 前提是根基，失败必须停止
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
+        context.data.agentRole = agentRole
         const { GenerateCoreSeedCommand } = await import('./commands/architecture.command')
         return new GenerateCoreSeedCommand().execute({ step, context, callbacks })
       },
@@ -62,6 +67,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       continueOnError: true,   // v0.2.1: 角色生成失败不阻断世界观和情节大纲
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
+        context.data.agentRole = agentRole
         const { GenerateCharactersCommand } = await import('./commands/architecture.command')
         return new GenerateCharactersCommand().execute({ step, context, callbacks })
       },
@@ -73,6 +79,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       continueOnError: true,   // v0.2.1: 世界观失败不阻断情节大纲
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
+        context.data.agentRole = agentRole
         const { GenerateWorldBuildingCommand } = await import('./commands/architecture.command')
         return new GenerateWorldBuildingCommand().execute({ step, context, callbacks })
       },
@@ -84,6 +91,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
       continueOnError: false,  // 情节大纲需要前置数据，但如果前面步骤continueOnError通过，它仍会尝试
       executor: async (step: unknown, context: WorkflowContext, callbacks: StepCallbacks) => {
         context.data.stepGuidance = guidance
+        context.data.agentRole = agentRole
         const { GeneratePlotArchitectureCommand } = await import('./commands/architecture.command')
         return new GeneratePlotArchitectureCommand(sel).execute({ step, context, callbacks })
       },

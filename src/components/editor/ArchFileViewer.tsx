@@ -13,6 +13,7 @@ import { useCharacterStore } from '../../stores/character-store'
 import { runArchCharacterExtract, createArchitectureWorkflow } from '../../services/workflows/architecture-workflow'
 import { useWorkflowStore } from '../../stores/workflow-store'
 import { globalEventBus } from '../../shared/event-bus'
+import type { AgentRole } from '../../shared/agent-types'
 
 type ArchStepKey = 'premise' | 'characters' | 'worldbuilding' | 'synopsis'
 
@@ -147,8 +148,8 @@ export default function ArchFileViewer({ filePath, content: initialContent }: Pr
   }, [handleReload])
 
   /** 确认后启动架构生成工作流 */
-  const handleConfirm = async (selectedSteps: ArchStepKey[], stepGuidance: Record<string, string>) => {
-    useWorkflowStore.getState().startWorkflow(createArchitectureWorkflow({ selectedSteps, stepGuidance }))
+  const handleConfirm = async (selectedSteps: ArchStepKey[], stepGuidance: Record<string, string>, agent?: AgentRole) => {
+    useWorkflowStore.getState().startWorkflow(createArchitectureWorkflow({ selectedSteps, stepGuidance, agentRole: agent }))
   }
 
   const handleOpenDialog = async () => {
