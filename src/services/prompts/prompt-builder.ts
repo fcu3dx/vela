@@ -180,6 +180,12 @@ export class ReviewPromptBuilder extends BasePromptBuilder {
     this.variables.review_focus = focus;
     return this;
   }
+
+  /** v0.2.3: 额外审稿规则（如番茄避规清单） */
+  withAdditionalRules(rules: string) {
+    this.variables.additional_rules = rules;
+    return this;
+  }
 }
 
 /**

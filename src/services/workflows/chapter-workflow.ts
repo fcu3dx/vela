@@ -29,6 +29,8 @@ export interface RefineOnlyParams {
   draftPath: string
   draftContent: string
   userRefinePrompt?: string
+  /** v0.2.3: Agent 选择 */
+  agentRole?: string
 }
 
 export interface RefineFromReviewParams {
@@ -39,6 +41,19 @@ export interface RefineFromReviewParams {
   reviewReport: string
   reviewFileName: string
   userRefinePrompt?: string
+  /** v0.2.3: Agent 选择 */
+  agentRole?: string
+}
+
+export interface FinalizeOnlyParams {
+  chapterNumber: number
+  chapterTitle: string
+  draftPath: string
+  draftContent: string
+  /** v0.2.3: Agent 选择 + 双版本输出 */
+  agentRole?: string
+  /** v0.2.3: 定稿版本类型 */
+  finalizeVersion?: 'standard' | 'tomato' | 'wechat'
 }
 
 export interface ReviewOnlyParams {
@@ -48,13 +63,8 @@ export interface ReviewOnlyParams {
   draftContent: string
   /** 审稿维度侧重点（可选） */
   reviewFocus?: string
-}
-
-export interface FinalizeOnlyParams {
-  chapterNumber: number
-  chapterTitle: string
-  draftPath: string
-  draftContent: string
+  /** v0.2.3: Agent 选择 */
+  agentRole?: string
 }
 
 // ==========================================

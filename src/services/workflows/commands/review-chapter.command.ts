@@ -47,6 +47,17 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
     const characterState = await this.readCharacterStates()
     const worldBuilding = await this.readWorldBuilding()
 
+    // v0.2.3: 番茄小说平台审核规则避规
+    const tomatoRules = `
+【番茄小说平台内容安全避规清单】
+- 脖子以上亲密行为 (接吻/拥抱可写，禁止深入描写)
+- 血腥暴力细节 (战斗可写，禁止感官细节)
+- 政治敏感/宗教极端 (架空世界观)
+- 涉黄低俗暗示 (擦边球禁止)
+- 医疗/法律情节需标注"纯属虚构"
+如遇违禁内容风险，请明确指出具体段落并给出修改建议。
+`.trim()
+
     const template = getPromptTemplate('consistency_check')
     if (!template) throw new Error('未找到审稿模板')
 
@@ -56,6 +67,7 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
       .withGlobalSummary(contextSummary)
       .withWorldBuilding(worldBuilding)
       .withReviewFocus(this.params.reviewFocus || '')
+      .withAdditionalRules(tomatoRules)
 
     callbacks.log('调用 AI 审查员对本章进行多维度扫描...')
 
