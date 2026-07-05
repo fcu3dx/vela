@@ -67,7 +67,14 @@ async function writeArchToDb(key: 'premise' | 'charactersArch' | 'worldbuilding'
 // --- 独立命令类 ---
 
 export class GenerateConfigCommand extends BaseWorkflowCommand<string> {
-  constructor(private idea: string, private totalChapters: number, private wordsPerChapter: number, private onGenerated: (config: Partial<NovelConfig>) => void) {
+  constructor(
+    private idea: string,
+    private totalChapters: number,
+    private wordsPerChapter: number,
+    private onGenerated: (config: Partial<NovelConfig>) => void,
+    private plotStructure?: string,
+    private narrativePOV?: string
+  ) {
     super()
   }
 
@@ -81,6 +88,16 @@ export class GenerateConfigCommand extends BaseWorkflowCommand<string> {
       .withUserIdea(this.idea)
       .withNumberOfChapters(this.totalChapters)
       .withWordNumber(this.wordsPerChapter)
+    
+    // v0.2.2: 注入用户已选的结构和视角（如果存在）
+    if (this.plotStructure) {
+      // 临时方案：直接 patch prompt 内容，告知 AI 尊重用户选择
+      const originalBuild = promptBuilder.build.bind(promptBuilder)
+      promptBuilder.build = () => {
+        const base = originalBuild()
+        return base + `\\n\\n【用户已选配置】\\n- 故事结构：${this.plotStructure}\\n- 叙事视角：${this.narrativePOV || '未指定'}\\n\\n重要：生成 JSON 时必须使用上述用户已选的值，不要自行推荐覆盖。`
+      }
+    }
 
     const resultRaw = await this.callLLMWithBuilder(
       promptBuilder,

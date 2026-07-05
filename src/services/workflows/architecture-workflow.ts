@@ -35,6 +35,9 @@ export interface ConfigGenerationWorkflowParams {
   onGenerated: (config: Partial<NovelConfig>) => void
   /** v0.2.1: 指定生成专家 Agent */
   agentRole?: import('../../shared/agent-types').AgentRole
+  /** v0.2.2: 用户已选的结构和视角，AI 必须尊重 */
+  plotStructure?: string
+  narrativePOV?: string
 }
 
 // ==========================================
@@ -113,7 +116,7 @@ export function createArchitectureWorkflow(params: ArchitectureWorkflowParams = 
 export function createConfigGenerationWorkflow(params: ConfigGenerationWorkflowParams): WorkflowDefinition {
   return {
     type: 'config_generation',
-    title: '🧠 AI 生成小说配置',
+    title: '🪄 AI 填充配置',
     steps: [
       {
         name: '智能分析并填充配置',
@@ -122,7 +125,14 @@ export function createConfigGenerationWorkflow(params: ConfigGenerationWorkflowP
           // v0.2.1: 注入 AgentRole
           context.data.agentRole = params.agentRole
           const { GenerateConfigCommand } = await import('./commands/architecture.command')
-          const cmd = new GenerateConfigCommand(params.idea, params.totalChapters, params.wordsPerChapter, params.onGenerated)
+          const cmd = new GenerateConfigCommand(
+            params.idea,
+            params.totalChapters,
+            params.wordsPerChapter,
+            params.onGenerated,
+            params.plotStructure,
+            params.narrativePOV
+          )
           return cmd.execute({ step, context, callbacks })
         },
       },
@@ -348,7 +358,10 @@ export function createCharacterExtractSteps(_projectPath: string, characterDynam
         }
 
         // 批量写入数据库
-        await ipc.invoke('db:character-save-all', characterDataList as unknown as CharacterData[])
+        const saveResult = await ipc.invoke('db:character-save-all', characterDataList as unknown as CharacterData[])
+        if (!saveResult.success) {
+          throw new Error(`角色卡保存失败：${saveResult.error || '未知错误'}`)
+        }
         cb.log(`✅ 角色卡提取完毕（共 ${characterDataList.length} 个角色）`)
       },
     },

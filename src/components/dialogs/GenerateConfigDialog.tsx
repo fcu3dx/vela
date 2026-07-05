@@ -119,6 +119,8 @@ export default function GenerateConfigDialog({ isOpen, onClose, onGenerated }: P
           wordsPerChapter: wordsPerChapter || 3000,
           onGenerated,
           agentRole: selectedAgent || undefined,
+          plotStructure: currentProject?.novelConfig.plotStructure,
+          narrativePOV: currentProject?.novelConfig.narrativePOV,
         })
       )
     } finally {
