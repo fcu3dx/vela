@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Sparkles, Hash, FileText } from 'lucide-react'
+import { Sparkles, Hash, FileText, ChevronsUpDown } from 'lucide-react'
 import { useLLMStore } from '../../stores/llm-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
 
@@ -14,6 +14,15 @@ import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Textarea } from '../ui/Textarea'
 import type { NovelConfig } from '../../shared/ipc-channels'
+import type { AgentRole } from '../../shared/agent-types'
+
+// 配置生成可选的 Agent 专家（与架构生成共享列表）
+const CONFIG_AGENTS: Array<{ role: AgentRole | ''; label: string; desc: string }> = [
+  { role: '',                label: '默认（故事架构师）', desc: '使用系统内置配置模板' },
+  { role: 'story-architect', label: '故事架构师',        desc: '浓缩核心卖点，精准定位题材与目标受众' },
+  { role: 'brainstormer',    label: '脑暴者',            desc: '创意驱动，激进设定与反套路策略' },
+  { role: 'general',         label: '通用助手',          desc: '平衡分析，稳妥填充' },
+]
 
 interface Props {
   isOpen: boolean
@@ -34,6 +43,8 @@ export default function GenerateConfigDialog({ isOpen, onClose, onGenerated }: P
 
   // 控制当外部 Confirm 弹窗显示时，阻止本 Dialog 因为"点击外部"而意外关闭
   const [confirming, setConfirming] = useState(false)
+  // v0.2.1: Agent 选择
+  const [selectedAgent, setSelectedAgent] = useState<AgentRole | ''>('')
 
   // 直接从 Store 读取规模参数 — 单一数据源，无需 local state 镜像
   const totalChapters = currentProject?.novelConfig.totalChapters ?? 100
@@ -107,6 +118,7 @@ export default function GenerateConfigDialog({ isOpen, onClose, onGenerated }: P
           totalChapters: totalChapters || 100,
           wordsPerChapter: wordsPerChapter || 3000,
           onGenerated,
+          agentRole: selectedAgent || undefined,
         })
       )
     } finally {
@@ -252,6 +264,35 @@ export default function GenerateConfigDialog({ isOpen, onClose, onGenerated }: P
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate()
               }}
             />
+          </div>
+
+          {/* v0.2.1: Agent 专家选择 */}
+          <div
+            className="rounded-lg p-3 space-y-2"
+            style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <ChevronsUpDown size={12} style={{ color: 'var(--color-text-muted)' }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                选择生成专家
+              </p>
+            </div>
+            <select
+              value={selectedAgent}
+              onChange={e => setSelectedAgent(e.target.value as AgentRole | '')}
+              className="w-full px-2 py-1.5 rounded text-xs outline-none"
+              style={{
+                backgroundColor: 'var(--color-input-bg)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              {CONFIG_AGENTS.map(a => (
+                <option key={a.role} value={a.role}>
+                  {a.label} — {a.desc}
+                </option>
+              ))}
+            </select>
           </div>
 
           <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>

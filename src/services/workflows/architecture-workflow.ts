@@ -33,6 +33,8 @@ export interface ConfigGenerationWorkflowParams {
   totalChapters: number
   wordsPerChapter: number
   onGenerated: (config: Partial<NovelConfig>) => void
+  /** v0.2.1: 指定生成专家 Agent */
+  agentRole?: import('../../shared/agent-types').AgentRole
 }
 
 // ==========================================
@@ -117,6 +119,8 @@ export function createConfigGenerationWorkflow(params: ConfigGenerationWorkflowP
         name: '智能分析并填充配置',
         description: `根据创作脑洞生成小说配置（全书规划约 ${params.totalChapters} 章）`,
         executor: async (step, context, callbacks) => {
+          // v0.2.1: 注入 AgentRole
+          context.data.agentRole = params.agentRole
           const { GenerateConfigCommand } = await import('./commands/architecture.command')
           const cmd = new GenerateConfigCommand(params.idea, params.totalChapters, params.wordsPerChapter, params.onGenerated)
           return cmd.execute({ step, context, callbacks })
