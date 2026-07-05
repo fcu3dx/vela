@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react'
 import { skillRegistry, type LoadedSkill } from '../../../services/agent/skill-registry'
+import { useAgentStore } from '../../../stores/agent-store'
 
 /** Skill 分类 */
 interface SkillCategory {
@@ -55,7 +56,15 @@ export default function SkillsPanel() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['core', 'advanced'])
   )
-  const [copiedName, setCopiedName] = useState<string | null>(null)
+  const [activatedSkill, setActivatedSkill] = useState<string | null>(null)
+
+  // v0.2.2: 点击 Skill 注入 AI 面板并发送
+  const activateSkill = (skillName: string) => {
+    const cmd = `/${skillName} `
+    useAgentStore.getState().sendMessage(cmd)
+    setActivatedSkill(skillName)
+    setTimeout(() => setActivatedSkill(null), 1500)
+  }
 
   useEffect(() => {
     // 确保 Skill Registry 已加载
@@ -127,13 +136,8 @@ export default function SkillsPanel() {
                   {catSkills.map(skill => (
                     <button
                       key={skill.metadata.name}
-                      onClick={() => {
-                        const cmd = `/${skill.metadata.name} `
-                        navigator.clipboard.writeText(cmd).catch(() => {})
-                        setCopiedName(skill.metadata.name)
-                        setTimeout(() => setCopiedName(null), 1500)
-                      }}
-                      className="w-full text-left px-2 py-1 mb-0.5 rounded-md transition-colors"
+                      onClick={() => activateSkill(skill.metadata.name)}
+                      className="w-full text-left px-2 py-1 mb-0.5 rounded-md transition-colors cursor-pointer"
                       style={{ backgroundColor: 'transparent' }}
                       onMouseEnter={e => {
                         e.currentTarget.style.backgroundColor = 'var(--color-hover)'
@@ -145,9 +149,9 @@ export default function SkillsPanel() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>
                         {skill.metadata.displayName ?? skill.metadata.name}
-                        {copiedName === skill.metadata.name && (
+                        {activatedSkill === skill.metadata.name && (
                           <span className="text-[0.6rem] ml-1" style={{ color: '#22c55e' }}>
-                            ✓ 已复制
+                            ✓ 已激活
                           </span>
                         )}
                         </span>
