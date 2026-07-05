@@ -63,7 +63,8 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
     const reviewResultRaw = await this.callLLMWithBuilder(
       promptBuilder,
       callbacks,
-      { responseFormat: { type: 'json_object' } }
+      { responseFormat: { type: 'json_object' }, thinking: true },
+      context
     )
 
     const reviewResultClean = this.stripThinkingTags(reviewResultRaw)

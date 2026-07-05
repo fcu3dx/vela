@@ -19,6 +19,8 @@ export interface ChapterInfo {
   userGuidance?: string
   /** 用户自定义知识库检索关键词（追加到向量搜索 query） */
   knowledgeQueryHint?: string
+  /** v0.2.3: 全流程 Agent 选择器 */
+  agentRole?: string
 }
 
 export interface RefineOnlyParams {
@@ -108,10 +110,9 @@ export async function updateDraftStatus(filePath: string, newStatus: DraftStatus
   }
 }
 
-// ==========================================
+//      ──────────────────────────────────────────
 // 3. 工作流定义映射工厂 (Command 调度层)
-// 将原有的 1500 多行核心面条代码剥离为微内核执行器。
-// ==========================================
+//      ──────────────────────────────────────────
 
 export function createChapterWorkflow(chapterInfo: ChapterInfo): WorkflowDefinition {
   return {
@@ -120,7 +121,7 @@ export function createChapterWorkflow(chapterInfo: ChapterInfo): WorkflowDefinit
     steps: [
       {
         name: '写稿',
-        description: '基于架构 + 蓝图 + 上下文调用 Command 生成草稿',
+        description: '基于架构 + 蓝图 + 上下文生成草稿',
         executor: async (step, context, callbacks) => {
           const { GenerateDraftCommand } = await import('./commands/generate-draft.command')
           const cmd = new GenerateDraftCommand(chapterInfo)
