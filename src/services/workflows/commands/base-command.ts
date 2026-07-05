@@ -155,11 +155,11 @@ export abstract class BaseWorkflowCommand<TResult = string> {
     options?: { responseFormat?: { type: string }; thinking?: boolean },
     context?: WorkflowContext
   ): Promise<string> {
-    // v0.2.2: 架构生成命令默认关闭 thinking 模式，避免大量思考+短正文导致重试
-    // Agent 调用保留 thinking（Agent system prompt 通常更短）
+    // v0.2.2: 默认打开 thinking 模式（DeepSeek 等模型依赖 reasoning 生成高质量内容）
+    // 关闭 thinking 会导致输出崩溃/乱码
     const agentRole = context?.data?.agentRole as string | undefined
     let systemPrompt = builder.getSystemRole()
-    const effectiveOptions = options ?? {}
+    const effectiveOptions = { thinking: true, ...(options ?? {}) }
     if (agentRole) {
       const { agentRegistry } = await import('../../agent/agent-registry')
       const profile = agentRegistry.get(agentRole as any)
@@ -167,10 +167,6 @@ export abstract class BaseWorkflowCommand<TResult = string> {
         callbacks.log(`🎯 使用专家 Agent: ${profile.emoji} ${profile.displayName}`)
         systemPrompt = profile.systemPrompt
       }
-    } else if (effectiveOptions.thinking === undefined) {
-      // 默认关闭 thinking，避免架构生成大量思考后输出超短正文
-      effectiveOptions.thinking = false
-       callbacks.log('🧠 架构生成已关闭 thinking 模式，直接输出正文')
     }
     return this.callLLM(builder.build(), systemPrompt, callbacks, effectiveOptions, context)
   }

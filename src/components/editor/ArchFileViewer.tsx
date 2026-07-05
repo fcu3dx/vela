@@ -168,7 +168,11 @@ export default function ArchFileViewer({ filePath, content: initialContent }: Pr
     if (EditorContentLen > 50 && !currentContentRef.current.includes('待生成')) {
       status[stepKey] = true
     }
+    
+    // v0.2.2 FIX: 防缓存/状态不一致，重新生成前强制刷新 per-file status
+    // 即使用户删除后保存，也要以最新读取的 DB 为准
     setFullArchStatus(status)
+    console.log('[ArchFileViewer] Arch status computed:', status, 'Editor len:', EditorContentLen)
     setCheckingArch(false)
     setShowDialog(true)
   }
