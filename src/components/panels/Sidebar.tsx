@@ -16,6 +16,7 @@ import ArchitecturePanel from './sidebar/ArchitecturePanel'
 import WorkflowPanel from './sidebar/WorkflowPanel'
 import ReviewPanel from './sidebar/ReviewPanel'
 import SkillsPanel from './sidebar/SkillsPanel'
+import BenchmarkPanel from './sidebar/BenchmarkPanel'
 import {
   registerMenuSetter, unregisterMenuSetter,
   type SidebarMenuState,
@@ -42,6 +43,7 @@ export default function Sidebar() {
     workflow:     '工作流',
     review:       '审稿',
     skills:       '技能',
+    benchmark:    '对标',
   }
 
   return (
@@ -64,6 +66,7 @@ export default function Sidebar() {
         {sidebarView === 'workflow'     && <WorkflowPanel />}
         {sidebarView === 'review'       && <ReviewPanel />}
         {sidebarView === 'skills'       && <SkillsPanel />}
+        {sidebarView === 'benchmark'    && <BenchmarkPanel />}
       </div>
 
       {/* 动态右键菜单 */}

@@ -34,6 +34,11 @@ interface LLMState {
   setDefaultModel: (modelId: string) => void
   /** 设置默认向量模型（持久化到 ~/.vela/config.json） */
   setDefaultEmbeddingModel: (modelId: string) => void
+  /** 非流式生成（简短对话包装） */
+  callLLM: (
+    prompt: string,
+    options?: { systemPrompt?: string; responseFormat?: { type: string }; thinking?: boolean }
+  ) => Promise<string>
   /** 非流式生成 */
   generate: (
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
@@ -126,6 +131,20 @@ export const useLLMStore = create<LLMState>()((set, get) => ({
       responseFormat: options?.responseFormat as { type: 'json_object' | 'text' } | undefined,
       thinking: options?.thinking
     })
+  },
+
+  callLLM: async (prompt, options) => {
+    const mid = get().defaultModelId
+    if (!mid) throw new Error('未配置默认模型')
+    const messages = options?.systemPrompt
+      ? [{ role: 'system' as const, content: options.systemPrompt }, { role: 'user' as const, content: prompt }]
+      : [{ role: 'user' as const, content: prompt }]
+    const resp = await get().generate(messages, undefined, {
+      responseFormat: options?.responseFormat,
+      thinking: options?.thinking ?? false, // v0.2.2: 默认关闭 thinking
+    })
+    if (!resp.success) throw new Error(`LLM 调用失败: ${resp.error}`)
+    return resp.content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
   },
 
   generateStream: async (messages, callbacks, modelId, options) => {

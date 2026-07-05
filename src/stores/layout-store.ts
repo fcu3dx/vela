@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 /** 左侧活动栏的视图类型 */
-export type SidebarView = 'home' | 'project' | 'knowledge' | 'characters' | 'settings' | 'architecture' | 'workflow' | 'review' | 'skills'
+export type SidebarView = 'home' | 'project' | 'knowledge' | 'characters' | 'settings' | 'architecture' | 'workflow' | 'review' | 'skills' | 'benchmark'
 
 /** 下方工具窗口 Tab */
 export type BottomTab = 'tasks' | 'log' | 'models'

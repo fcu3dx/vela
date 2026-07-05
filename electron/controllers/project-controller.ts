@@ -170,6 +170,7 @@ export function registerProjectController() {
         if (nc.synopsis) updateData.synopsis = nc.synopsis as string
         if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding as string
         if (nc.charactersArch) updateData.charactersArch = nc.charactersArch as string
+        if (nc.premise) updateData.premise = nc.premise as string
         ProjectCoreRepository.update(updateData)
       }
 
@@ -219,6 +220,7 @@ export function registerProjectController() {
         if (nc.synopsis) updateData.synopsis = nc.synopsis as string
         if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding as string
         if (nc.charactersArch) updateData.charactersArch = nc.charactersArch as string
+        if (nc.premise) updateData.premise = nc.premise as string
         ProjectCoreRepository.update(updateData)
       }
       return { success: true }

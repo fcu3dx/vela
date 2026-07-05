@@ -40,6 +40,25 @@ async function writeArchToDb(key: 'premise' | 'charactersArch' | 'worldbuilding'
   const cleanContent = stripThinkingTags(content)
   await ipc.invoke('db:project-core-update', { [key]: cleanContent })
 
+  // v0.2.2 FIX: 同步更新 Zustand novelConfig，避免后续 saveProject() 用陈旧值覆盖 DB
+  const map: Record<string, string> = {
+    synopsis: 'coreOutline',
+    worldbuilding: 'worldSetting',
+    charactersArch: 'protagonistProfile',
+  }
+  const novelField = map[key]
+  if (novelField) {
+    const { useProjectStore } = await import('../../../stores/project-store')
+    useProjectStore.getState().updateNovelConfig({
+      [novelField]: cleanContent,
+      // 同时更新 novelConfig 中的原始字段（避免 roundtrip 丢失）
+      [key]: cleanContent,
+    })
+  } else if (key === 'premise') {
+    const { useProjectStore } = await import('../../../stores/project-store')
+    useProjectStore.getState().updateNovelConfig({ premise: cleanContent })
+  }
+
   // 通知 UI 层实时刷新架构完成状态
   const { globalEventBus } = await import('../../../shared/event-bus')
   globalEventBus.emit('ARCH_FILE_UPDATED', { fileName: `${key}.md` })
