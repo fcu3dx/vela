@@ -295,7 +295,14 @@ export default function NovelConfigEditor() {
         isOpen={showGenerateConfig}
         onClose={() => setShowGenerateConfig(false)}
         onGenerated={(parsed) => {
-          // 直接写 Store，组件自动重新渲染
+          // 保护用户手动选择的结构和视角，不被 AI 推荐覆盖
+          const current = currentProject?.novelConfig
+          if (current && parsed.plotStructure === undefined) {
+            parsed.plotStructure = current.plotStructure
+          }
+          if (current && parsed.narrativePOV === undefined) {
+            parsed.narrativePOV = current.narrativePOV
+          }
           updateNovelConfig(parsed)
         }}
       />
