@@ -76,36 +76,49 @@ export abstract class BaseWorkflowCommand<TResult = string> {
             callbacks.setProgress(90)
             const raw = text || fullContent
             const cleaned = this.stripThinkingTags(raw)
-            // v0.2.1: 空值保护 — LLM 可能 thinking 后无正文
-            if (!cleaned || cleaned.trim().length < 50) {
-              // 给一次自动重试：追加 "直接输出" 指令，抑制 thinking
-              callbacks.log('⚠️ AI 返回内容为空或过短(不足50字)，正在自动重试 (第2次)...')
-              const retryMessages = [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: prompt },
-                { role: 'user', content: '(请直接输出正文，不要使用 reasoning/thinking 模式，不需要解释过程。请输出完整的、详细的内容。)' }
-              ]
-              const retryOptions = { ...options, thinking: false }
-              llmStore.generateStream(
-                retryMessages,
-                {
-                  onChunk: (chunk) => { fullContent += chunk; callbacks.appendText(chunk) },
-                  onDone: (retryText) => {
-                    const retryRaw = retryText || fullContent
-                    const retryCleaned = this.stripThinkingTags(retryRaw)
-                    if (!retryCleaned || retryCleaned.trim().length < 50) {
-                      callbacks.log('❌ 重试后仍不足50字')
-                      reject(new Error('AI 连续两次返回内容过短（不足50字），请检查模型配置或缩短上下文'))
-                    } else {
-                      callbacks.log('✅ 重试成功')
-                      resolve(retryCleaned)
-                    }
+            // v0.2.2: 空值/短内容保护增强 — 情节大纲等重度生成需200字，轻量50字
+            // thinking 模型可能输出大量思考+超短正文
+            const minLen = (options?.responseFormat?.type === 'json_object') ? 20 : 200
+            if (!cleaned || cleaned.trim().length < minLen) {
+              // 给 3 次自动重试：追加 "直接输出" 指令，抑制 thinking
+              const RETRY_LIMIT = 3
+              const doRetry = (attempt: number): void => {
+                if (attempt > RETRY_LIMIT) {
+                  callbacks.log(`❌ 重试${RETRY_LIMIT}次后仍不足${minLen}字`)
+                  reject(new Error(`AI 连续${RETRY_LIMIT+1}次返回内容过短（不足${minLen}字），请检查模型配置或缩短上下文`))
+                  return
+                }
+                callbacks.log(`⚠️ AI 返回内容过短(不足${minLen}字)，正在自动重试 (第${attempt+1}次)...`)
+                const retryMessages = [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: prompt },
+                  { role: 'user', content: `(请直接输出正文，不要使用 reasoning/thinking 模式，不需要解释过程。请输出完整的、详细的内容，至少 ${minLen} 字。这是强制要求，请确保字数达标。)` }
+                ]
+                const retryOptions = { ...options, thinking: false }
+                llmStore.generateStream(
+                  retryMessages,
+                  {
+                    onChunk: (chunk) => { fullContent += chunk; callbacks.appendText(chunk) },
+                    onDone: (retryText) => {
+                      const retryRaw = retryText || fullContent
+                      const retryCleaned = this.stripThinkingTags(retryRaw)
+                      if (!retryCleaned || retryCleaned.trim().length < minLen) {
+                        doRetry(attempt + 1)
+                      } else {
+                        callbacks.log(`✅ 重试成功 (第${attempt+1}次)`)
+                        resolve(retryCleaned)
+                      }
+                    },
+                    onError: (err) => {
+                      callbacks.log(`⚠️ 第${attempt+1}次重试失败: ${err}`)
+                      doRetry(attempt + 1)
+                    },
                   },
-                  onError: (err) => reject(new Error(err || '重试生成失败')),
-                },
-                undefined,
-                retryOptions
-              )
+                  undefined,
+                  retryOptions
+                )
+              }
+              doRetry(1)
               return
             }
             resolve(cleaned)
@@ -142,9 +155,11 @@ export abstract class BaseWorkflowCommand<TResult = string> {
     options?: { responseFormat?: { type: string }; thinking?: boolean },
     context?: WorkflowContext
   ): Promise<string> {
-    // v0.2.0.x: 如果指定了 Agent，使用 Agent system prompt 而非模板默认 role
+    // v0.2.2: 架构生成命令默认关闭 thinking 模式，避免大量思考+短正文导致重试
+    // Agent 调用保留 thinking（Agent system prompt 通常更短）
     const agentRole = context?.data?.agentRole as string | undefined
     let systemPrompt = builder.getSystemRole()
+    const effectiveOptions = options ?? {}
     if (agentRole) {
       const { agentRegistry } = await import('../../agent/agent-registry')
       const profile = agentRegistry.get(agentRole as any)
@@ -152,8 +167,12 @@ export abstract class BaseWorkflowCommand<TResult = string> {
         callbacks.log(`🎯 使用专家 Agent: ${profile.emoji} ${profile.displayName}`)
         systemPrompt = profile.systemPrompt
       }
+    } else if (effectiveOptions.thinking === undefined) {
+      // 默认关闭 thinking，避免架构生成大量思考后输出超短正文
+      effectiveOptions.thinking = false
+       callbacks.log('🧠 架构生成已关闭 thinking 模式，直接输出正文')
     }
-    return this.callLLM(builder.build(), systemPrompt, callbacks, options, context)
+    return this.callLLM(builder.build(), systemPrompt, callbacks, effectiveOptions, context)
   }
 
   /**
