@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Sparkles, Play, AlertCircle } from 'lucide-react'
+import { Sparkles, Play, AlertCircle, Sparkles as AgentIcon } from 'lucide-react'
 import { useProjectStore } from '../../stores/project-store'
 import { useLLMStore } from '../../stores/llm-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
+import { agentRegistry } from '../../services/agent/agent-registry'
+import type { AgentRole } from '../../shared/agent-types'
 
 import { createChapterWorkflow } from '../../services/workflows/chapter-workflow'
 import { guardChapterWriting } from '../../services/workflow-guards'
@@ -46,6 +48,8 @@ export default function ChapterCreationDialog({ isOpen, onClose, prefill }: Prop
   const [loadedFromHistory, setLoadedFromHistory] = useState(false)
   const [loadedFromBlueprint, setLoadedFromBlueprint] = useState(false)
   const [guardError, setGuardError] = useState<string | null>(null)
+  /** v0.2.3: Agent 选择 */
+  const [selectedAgent, setSelectedAgent] = useState<AgentRole | ''>('')
   const isChapterRunning = useWorkflowStore(s => s.isTypeRunning('chapter_creation'))
 
 
@@ -183,6 +187,7 @@ export default function ChapterCreationDialog({ isOpen, onClose, prefill }: Prop
       keyEvents,
       userGuidance,
       knowledgeQueryHint: knowledgeHint.trim() || undefined,
+      agentRole: selectedAgent || undefined,
     })
 
     // 启动任务后关闭设定弹窗，由全局 Overlay 接管展示
@@ -296,9 +301,26 @@ export default function ChapterCreationDialog({ isOpen, onClose, prefill }: Prop
                 <Textarea
                   value={userGuidance}
                   onChange={(e) => setUserGuidance(e.target.value)}
-                  placeholder="特殊要求：开头氛围、结尾方式、某个细节处理方式..."
+                  placeholder="你希望 AI 怎么写这一段..."
                   rows={2}
                 />
+              </div>
+
+              {/* v0.2.3: Agent 选择器 */}
+              <div className="border-t border-[--border-soft] pt-3 mt-1">
+                <Label className="flex items-center gap-1.5">
+                  <AgentIcon className="w-3.5 h-3.5" />
+                  选择专业 Agent
+                  <span className="text-[0.7rem] opacity-50 font-normal">（可选，不选则使用默认助手）</span>
+                </Label>
+                <NativeSelect value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value as AgentRole | '')}>
+                  <option value="">默认助手（通用型）</option>
+                  {agentRegistry.getAll().map((agent) => (
+                    <option key={agent.role} value={agent.role}>
+                      {agent.emoji} {agent.label} — {agent.desc?.slice(0, 60)}{agent.desc && agent.desc.length > 60 ? '...' : ''}
+                    </option>
+                  ))}
+                </NativeSelect>
               </div>
 
               <div>
