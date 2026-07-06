@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Trash2, ChevronsDown, Loader2, CheckCircle2, XCircle, Clock,
   Play, X, ChevronDown, ChevronRight, Zap,
+  FileText, BookOpen,
 } from 'lucide-react'
 import { useLayoutStore } from '../../stores/layout-store'
 import { useWorkflowStore, type WorkflowStep, type WorkflowRun } from '../../stores/workflow-store'
@@ -12,6 +13,8 @@ const TAB_LABELS: Record<string, string> = {
   tasks:  '任务',
   log:    '日志',
   models: '模型调用',
+  tracking: '追踪',
+  benchmark: '对标',
 }
 
 /** 下方工具窗口 */
@@ -94,9 +97,11 @@ export default function BottomPanel() {
 
       {/* 内容区 */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'tasks'  && <TaskRunView />}
-        {activeTab === 'log'    && <LogsView />}
-        {activeTab === 'models' && <ModelsView />}
+        {activeTab === 'tasks'    && <TaskRunView />}
+        {activeTab === 'log'      && <LogsView />}
+        {activeTab === 'models'   && <ModelsView />}
+        {activeTab === 'tracking' && <ContentTrackingView />}
+        {activeTab === 'benchmark'&& <BenchmarkView />}
       </div>
     </div>
   )
@@ -617,6 +622,120 @@ function ModelsView() {
             </tbody>
           </table>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ===== 追踪视图 =====
+
+function ContentTrackingView() {
+  return (
+    <div className="h-full overflow-y-auto p-4">
+      <div className="text-xs text-[var(--color-text-secondary)]">
+        <p className="mb-3">追踪面板提供故事连续性管理的统一视图，查看和编辑以下文件：</p>
+
+        <div className="grid gap-2">
+          <div
+            className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-[var(--color-hover)] transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent('vela:open-file', { detail: '追踪/上下文.md' }))}
+            style={{ border: '1px solid var(--color-border)' }}
+          >
+            <FileText size={16} style={{ color: 'var(--color-accent)' }} />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-[var(--color-text)]">上下文.md</div>
+              <div className="text-[0.68rem] text-[var(--color-text-muted)]">写作上下文（compact 恢复用）</div>
+            </div>
+          </div>
+
+          <div
+            className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-[var(--color-hover)] transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent('vela:open-file', { detail: '追踪/伏笔.md' }))}
+            style={{ border: '1px solid var(--color-border)' }}
+          >
+            <FileText size={16} style={{ color: 'var(--color-warning)' }} />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-[var(--color-text)]">伏笔.md</div>
+              <div className="text-[0.68rem] text-[var(--color-text-muted)]">伏笔埋设/回收状态表</div>
+            </div>
+          </div>
+
+          <div
+            className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-[var(--color-hover)] transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent('vela:open-file', { detail: '追踪/时间线.md' }))}
+            style={{ border: '1px solid var(--color-border)' }}
+          >
+            <FileText size={16} style={{ color: 'var(--color-info)' }} />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-[var(--color-text)]">时间线.md</div>
+              <div className="text-[0.68rem] text-[var(--color-text-muted)]">故事内时间线</div>
+            </div>
+          </div>
+
+          <div
+            className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-[var(--color-hover)] transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent('vela:open-file', { detail: '追踪/角色状态.md' }))}
+            style={{ border: '1px solid var(--color-border)' }}
+          >
+            <FileText size={16} style={{ color: 'var(--color-error)' }} />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-[var(--color-text)]">角色状态.md</div>
+              <div className="text-[0.68rem] text-[var(--color-text-muted)]">角色当前状态快照</div>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[0.68rem] text-[var(--color-text-muted)]">
+          💡 文件自动在项目初始化时创建，位于「追踪/」目录下。
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ===== 对标视图 =====
+
+function BenchmarkView() {
+  return (
+    <div className="h-full overflow-y-auto p-4">
+      <div className="text-xs text-[var(--color-text-secondary)]">
+        <p className="mb-3">对标与拆文分析，以书为镜分析结构和技巧：</p>
+
+        <div className="grid gap-2">
+          <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ border: '1px solid var(--color-border)' }}>
+            <div className="flex items-center gap-2">
+              <BookOpen size={16} style={{ color: 'var(--color-accent)' }} />
+              <span className="text-sm font-medium text-[var(--color-text)]">对标书籍</span>
+            </div>
+            <span className="text-[0.68rem] text-[var(--color-text-muted)]">
+              在「对标/」目录下，每本书一个子目录：角色/剧情/设定/文风/拆文报告
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ border: '1px solid var(--color-border)' }}>
+            <div className="flex items-center gap-2">
+              <BookOpen size={16} style={{ color: 'var(--color-warning)' }} />
+              <span className="text-sm font-medium text-[var(--color-text)]">拆文库</span>
+            </div>
+            <span className="text-[0.68rem] text-[var(--color-text-muted)]">
+              在「拆文库/」目录下，每书一个子目录：结构化拆解产物
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ border: '1px solid var(--color-border)' }}>
+            <div className="flex items-center gap-2">
+              <Zap size={16} style={{ color: 'var(--color-info)' }} />
+              <span className="text-sm font-medium text-[var(--color-text)]">市场扫榜</span>
+            </div>
+            <span className="text-[0.68rem] text-[var(--color-text-muted)]">
+              使用 AI 面板的 `novel-analyze` / `market-scan` Skill 启动分析
+            </span>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[0.68rem] text-[var(--color-text-muted)]">
+          💡 在 AI 面板中切换到对应 Agent 后输入指令开始对标分析。
+        </p>
       </div>
     </div>
   )

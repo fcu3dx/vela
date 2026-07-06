@@ -1,6 +1,6 @@
 import {
   FolderOpen, BookOpen, Users,
-  Home, Zap, ScrollText, Cpu,
+  Home, Zap, ScrollText, Cpu, Pin,
 } from 'lucide-react'
 import { useLayoutStore, type SidebarView, type BottomTab } from '../../stores/layout-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
@@ -14,9 +14,11 @@ const sidebarActivities: Array<{ id: SidebarView; icon: typeof FolderOpen; label
 
 /** 底部面板 Tab 按钮配置 */
 const bottomTabs: Array<{ id: BottomTab; icon: typeof Zap; label: string }> = [
-  { id: 'tasks', icon: Zap, label: '任务' },
-  { id: 'log', icon: ScrollText, label: '日志' },
-  { id: 'models', icon: Cpu, label: '模型调用' },
+  { id: 'tasks',    icon: Zap,        label: '任务'    },
+  { id: 'log',      icon: ScrollText, label: '日志'    },
+  { id: 'models',   icon: Cpu,        label: '模型调用' },
+  { id: 'tracking', icon: Pin,        label: '追踪'    },
+  { id: 'benchmark',icon: BookOpen,   label: '对标'    },
 ]
 
 /**

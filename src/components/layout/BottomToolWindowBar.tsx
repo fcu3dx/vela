@@ -1,12 +1,14 @@
-import { Zap, ScrollText, Cpu } from 'lucide-react'
+import { Zap, ScrollText, Cpu, Pin, BookOpen } from 'lucide-react'
 import { useLayoutStore, type BottomTab } from '../../stores/layout-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
 
 /** 底部工具窗口每个 Tab 对应的按钮配置 */
 const bottomTabs: Array<{ id: BottomTab; icon: typeof Zap; label: string }> = [
-  { id: 'tasks',  icon: Zap,        label: '任务'    },
-  { id: 'log',    icon: ScrollText, label: '日志'    },
-  { id: 'models', icon: Cpu,        label: '模型'    },
+  { id: 'tasks',    icon: Zap,        label: '任务'    },
+  { id: 'log',      icon: ScrollText, label: '日志'    },
+  { id: 'models',   icon: Cpu,        label: '模型'    },
+  { id: 'tracking', icon: Pin,        label: '追踪'    },
+  { id: 'benchmark',icon: BookOpen,   label: '对标'    },
 ]
 
 /**

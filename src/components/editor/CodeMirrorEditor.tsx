@@ -30,6 +30,7 @@ const AI_ACTIONS = [
   { key: 'expand', label: '扩写', color: 'text-amber-400', prompt: '扩写这部分，增加更多细节描写和环境烘托。' },
   { key: 'continue', label: '续写', color: 'text-purple-400', prompt: '根据上下文，合理续写接下来的情节。' },
   { key: 'dialogue', label: '对话', color: 'text-emerald-400', prompt: '将这部分改写为更生动传神的对话形式。' },
+  { key: 'deai', label: '去AI味', color: 'text-red-400', prompt: '检测并去除文本中的AI味：去掉常见AI句式模板、辍词、过多逻辑连词、总结性语言和解释性旁白，改写为更自然的人类写作风格。' },
 ]
 
 export default function CodeMirrorEditor({
