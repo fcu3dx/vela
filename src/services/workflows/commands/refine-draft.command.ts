@@ -48,7 +48,7 @@ export class RefineDraftCommand extends BaseWorkflowCommand<string> {
       .withWordNumber(project.novelConfig.wordsPerChapter)
       .withUserRefinePrompt(userPromptBlock)
 
-    const refined = await this.callLLMWithBuilder(promptBuilder, callbacks, { thinking: true }, context)
+    const refined = await this.callLLMWithBuilder(promptBuilder, callbacks, { thinking: false }, context)
     const cleanRefined = this.stripThinkingTags(refined)
 
     const { parseDraftMeta } = await import('../chapter-workflow')
