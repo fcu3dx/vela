@@ -113,8 +113,6 @@ export default function DraftEditor({ filePath, content }: Props) {
   const [charCount, setCharCount] = useState(0)
   /** v0.2.3: Agent 选择 */
   const [selectedAgent, setSelectedAgent] = useState<AgentRole | ''>('')
-  /** v0.2.3: 定稿版本类型 */
-  const [finalizeVersion, setFinalizeVersion] = useState<'standard' | 'tomato' | 'wechat'>('standard')
   const isDirty = useEditorStore(s => s.tabs.find(t => t.filePath === filePath)?.dirty ?? false)
   const currentBodyRef = useRef(content)
 
@@ -209,7 +207,6 @@ export default function DraftEditor({ filePath, content }: Props) {
         draftPath: filePath,
         draftContent: body,
         agentRole: selectedAgent || undefined,
-        finalizeVersion,
       }), false)
     } catch (e) {
       toast.error(`定稿启动失败：${e}`)
@@ -413,19 +410,6 @@ export default function DraftEditor({ filePath, content }: Props) {
               {agentRegistry.listAll().map((a) => (
                 <option key={a.role} value={a.role}>{a.emoji} {a.displayName}</option>
               ))}
-            </select>
-
-            {/* v0.2.3: 定稿版本选择器 */}
-            <select
-              value={finalizeVersion}
-              onChange={(e) => setFinalizeVersion(e.target.value as 'standard' | 'tomato' | 'wechat')}
-              className="text-[0.7rem] bg-transparent border border-[--border-soft] rounded px-1.5 py-0.5 flex-shrink-0"
-              style={{ color: 'var(--color-text)', maxWidth: 110 }}
-              title="定稿版本类型"
-            >
-              <option value="standard">标准版</option>
-              <option value="tomato">🍅 番茄小说版</option>
-              <option value="wechat">💬 公众号版</option>
             </select>
 
             {/* AI 修稿 */}
