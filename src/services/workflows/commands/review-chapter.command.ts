@@ -69,6 +69,14 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
       .withReviewFocus([this.params.reviewFocus || '', tomatoRules].filter(Boolean).join('\n\n'))
       .withAdditionalRules(tomatoRules)
 
+    // v0.2.5: prompt 预算控制 — 审稿内容太大时截断，防止 fetch failed
+    const built = promptBuilder.build()
+    if (built.length > 60000) {
+      const truncatedDraft = draft.slice(0, Math.floor(60000 * 0.6))
+      callbacks.log(`⚠️ 草稿内容过长（${draft.length} 字），截断至 ${truncatedDraft.length} 字以保证 API 调用安全`)
+      promptBuilder.withChapterContent(truncatedDraft)
+    }
+
     callbacks.log('调用 AI 审查员对本章进行多维度扫描...')
 
     // 期望 JSON 格式返回
@@ -88,12 +96,12 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
 
     const revIndex = await ipc.invoke('db:review-next-index', baseDraft.id)
 
-    let parsedResult
+    let parsedResult: any
     try {
       parsedResult = this.parseJSON(reviewResultClean)
     } catch {
-      callbacks.log('⚠️ 审稿结果解析失败，返回原始文本')
-      parsedResult = { summary: '解析失败', items: [] }
+      callbacks.log('⚠️ 审稿结果 JSON 解析失败，使用 markdown 格式保存')
+      parsedResult = { summary: '审稿结果 (非标准 JSON)', content: reviewResultClean, items: [] }
     }
 
     await ipc.invoke('db:review-create', {
