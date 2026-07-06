@@ -195,8 +195,9 @@ export abstract class BaseWorkflowCommand<TResult = string> {
    * 去除 DeepSeek 等模型的  thinking 标签，保证落盘纯净
    */
   protected stripThinkingTags(text: string): string {
-    return text.replace(/ thinking[\s\S]*?(?:<\/think>|$)/gi, '').trim()
-  }
+      const cleaned = text.replace(/<\/?think>/gi, '').trim()
+      return cleaned || text.trim()
+    }
 
   /**
    * 全局容错 JSON 解析器

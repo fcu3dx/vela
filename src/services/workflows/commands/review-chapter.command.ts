@@ -83,7 +83,7 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
     const reviewResultRaw = await this.callLLMWithBuilder(
       promptBuilder,
       callbacks,
-      { responseFormat: { type: 'json_object' }, thinking: true },
+      { responseFormat: { type: 'json_object' }, thinking: false },
       context
     )
 
