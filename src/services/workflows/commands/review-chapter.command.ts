@@ -66,7 +66,7 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
       .withCharacterStates(characterState)
       .withGlobalSummary(contextSummary)
       .withWorldBuilding(worldBuilding)
-      .withReviewFocus(this.params.reviewFocus || '')
+      .withReviewFocus([this.params.reviewFocus || '', tomatoRules].filter(Boolean).join('\n\n'))
       .withAdditionalRules(tomatoRules)
 
     callbacks.log('调用 AI 审查员对本章进行多维度扫描...')

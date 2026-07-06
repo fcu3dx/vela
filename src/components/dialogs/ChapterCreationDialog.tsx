@@ -66,6 +66,11 @@ export default function ChapterCreationDialog({ isOpen, onClose, prefill }: Prop
     return unsub
   }, [isOpen, onClose])
 
+  // v0.2.3: 确保 Agent 注册表已初始化（否则下拉列表为空）
+  useEffect(() => {
+    if (agentRegistry.size === 0) agentRegistry.init()
+  }, [])
+
   /** 从项目本地 .vela/chapter_creation_log.json 读取上次参数 */
   const loadLastParams = useCallback(async () => {
     if (!currentProject) return

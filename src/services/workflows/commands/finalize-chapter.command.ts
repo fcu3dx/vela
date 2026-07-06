@@ -13,43 +13,11 @@ import {
 } from '../workflow-utils'
 import type { ChapterInfo } from '../chapter-workflow'
 
-// v0.2.3: 双版本定稿工具函数
-
-/** 番茄小说版适配：去多余空行、按 300 字加段落分割、去 Markdown 标记 */
-function refineForTomato(text: string): string {
-  return text
-    .replace(/^#{1,6} .*$/gm, '')
-    .replace(/\*\*(.+?)\*\*/g, '$1')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/(.{250,350})\n/g, '$1\n\n')
-    .replace(/\n\n\n/g, '\n\n')
-    .trim()
-}
-
-/** 公众号版适配：加emoji段落引导、互动提问、字数可控 */
-function refineForWechat(text: string): string {
-  const emojis = ['📖', '✨', '💭', '🔥', '🎭', '🌟', '💫', '🌙']
-  let ei = 0
-  const result = text
-    .replace(/^#{1,6} .*$/gm, '')
-    .split(/\n\n/)
-    .map(p => {
-      if (p.trim().length < 20) return p
-      const emoji = emojis[ei % emojis.length]
-      ei++
-      return `${emoji} ${p.trim()}`
-    })
-    .join('\n\n')
-  return `${result}\n\n---\n\n💬 喜欢这篇吗？评论区聊聊你的感受吧～\n👇 关注我，不错过下一章`
-}
-
 export interface FinalizeChapterParams {
   draftPath: string
   draftContent: string
   chapterNumber: number
   chapterInfo: ChapterInfo
-  /** v0.2.3: 定稿版本类型 */
-  finalizeVersion?: 'standard' | 'tomato' | 'wechat'
 }
 
 // ===== 工具函数：流式调用大模型并返回完整文本 =====
@@ -300,23 +268,58 @@ export class FinalizeChapterCommand extends BaseWorkflowCommand<void> {
           callbacks.log(`⚠️ 写入根目录物理文件失败: ${String(e)}`)
         }
 
-        // v0.2.3: 双版本定稿输出
-        const version = this.params.finalizeVersion || 'standard'
-        if (version === 'tomato') {
-          callbacks.log('🍅 生成番茄小说适配版本...')
-          const tomatoPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}【番茄小说版】.txt`
-          try {
-            await ipc.invoke('fs:write-file', tomatoPath, refineForTomato(refinedDraftText))
-            callbacks.log(`✅ 番茄小说版已写出: ${tomatoPath}`)
-          } catch (e) { callbacks.log(`⚠️ 番茄版写出失败: ${String(e)}`) }
-        } else if (version === 'wechat') {
-          callbacks.log('💬 生成微信公众号适配版本...')
-          const wechatPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}【公众号版】.txt`
-          try {
-            await ipc.invoke('fs:write-file', wechatPath, refineForWechat(refinedDraftText))
-            callbacks.log(`✅ 公众号版已写出: ${wechatPath}`)
-          } catch (e) { callbacks.log(`⚠️ 公众号版写出失败: ${String(e)}`) }
-        }
+        // v0.2.3: 定稿输出三版本（标准版 + 番茄版 + 公众号版全部同时生成）
+        // 1. 标准版（已写入上面 physicalPath，无需额外操作）
+
+        // 2. 番茄小说版（完整3000+字，去Markdown标记）
+        const tomatoPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}【番茄小说版】.txt`
+        try {
+          const tomatoContent = refinedDraftText
+            .replace(/^#{1,6}\\s+.*$/gm, '')
+            .replace(/\\*\\*(.+?)\\*\\*/g, '$1')
+            .replace(/^\\s*[-*]\\s+/gm, '')
+            .replace(/\\n{3,}/g, '\\n\\n')
+            .replace(/(.{200,400}[。！？\\n])/g, '$1\\n\\n')
+            .replace(/\\n\\n\\n/g, '\\n\\n')
+            .trim()
+          await ipc.invoke('fs:write-file', tomatoPath, tomatoContent)
+          callbacks.log(`✅ 番茄小说版已写出 (${tomatoContent.length}字): ${tomatoPath}`)
+        } catch (e) { callbacks.log(`⚠️ 番茄版写出失败: ${String(e)}`) }
+
+        // 3. 微信公众号版（按自然段落拆成2-3篇，内容不变、总字数不变）
+        const wechatDir = `${project.path}/第${this.params.chapterNumber}章${safeTitle}_公众号版`
+        try {
+          await ipc.invoke('fs:mkdir', wechatDir)
+          const paragraphs = refinedDraftText
+            .replace(/^#{1,6}\\s+.*$/gm, '')
+            .split(/\\n\\n+/)
+            .map(p => p.trim())
+            .filter(p => p.length > 0)
+          const totalParagraphs = paragraphs.length
+          const sections = totalParagraphs <= 6 ? 2 : 3
+          const perSection = Math.ceil(totalParagraphs / sections)
+          const emojis = ['📖', '✨', '💭', '🔥', '🎭', '🌟', '💫', '🌙']
+          const sectionTitles = ['上篇', '中篇', '下篇']
+          for (let si = 0; si < sections; si++) {
+            const start = si * perSection
+            const end = Math.min((si + 1) * perSection, totalParagraphs)
+            if (start >= totalParagraphs) break
+            const sectionParagraphs = paragraphs.slice(start, end)
+            const content = sectionParagraphs
+              .map((p, i) => {
+                if (p.length < 20) return p
+                const emoji = emojis[(si * perSection + i) % emojis.length]
+                return `${emoji} ${p}`
+              })
+              .join('\\n\\n')
+            const footer = si === sections - 1
+              ? '\\n\\n---\\n\\n💬 如果喜欢这篇故事，点个「在看」告诉我～\\n👇 关注我，不错过后续更新！'
+              : '\\n\\n---\\n\\n📌 未完待续，点击关注看下篇～'
+            const sectionPath = `${wechatDir}/${sectionTitles[si]}.txt`
+            await ipc.invoke('fs:write-file', sectionPath, content + footer)
+            callbacks.log(`✅ 公众号版·${sectionTitles[si]}已写出: ${sectionPath}`)
+          }
+        } catch (e) { callbacks.log(`⚠️ 公众号版写出失败: ${String(e)}`) }
 
         callbacks.log(`✅ 定稿内容已正式写入 SQLite 数据库并同步为根目录文件 (第${this.params.chapterNumber}章${safeTitle}.txt)`)
 

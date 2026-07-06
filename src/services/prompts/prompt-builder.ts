@@ -149,6 +149,12 @@ export class ChapterPromptBuilder extends BasePromptBuilder {
     this.variables.knowledge_query_hint = hint;
     return this;
   }
+
+  /** v0.2.3: 额外规则注入（如番茄小说避规清单） */
+  withAdditionalRules(rules: string) {
+    this.variables.additional_rules = rules;
+    return this;
+  }
 }
 
 /**

@@ -81,6 +81,11 @@ export default function DraftEditor({ filePath, content }: Props) {
     }
   }, [filePath])
 
+  // v0.2.3: 确保 Agent 注册表已初始化（否则下拉列表为空）
+  useEffect(() => {
+    if (agentRegistry.size === 0) agentRegistry.init()
+  }, [])
+
   const status: DraftStatus = meta?.status ?? 'draft'
   const isReadonly = status === 'finalized' || status === 'archived'
 
