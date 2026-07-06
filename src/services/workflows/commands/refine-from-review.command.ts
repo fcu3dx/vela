@@ -40,7 +40,7 @@ export class RefineFromReviewCommand extends BaseWorkflowCommand<string> {
       .withGlobalGuidance((project.novelConfig.globalGuidance || '') + tomatoGuard)
       .withUserRefinePrompt(userPromptBlock)
 
-    const refined = await this.callLLMWithBuilder(promptBuilder, callbacks, { thinking: false }, context)
+    const refined = await this.callLLMWithBuilder(promptBuilder, callbacks, { thinking: false, minLen: 50 }, context)
     const cleanRefined = this.stripThinkingTags(refined)
 
     const { parseDraftMeta } = await import('../chapter-workflow')

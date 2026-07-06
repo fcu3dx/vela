@@ -23,7 +23,7 @@ export abstract class BaseWorkflowCommand<TResult = string> {
     prompt: string, 
     systemPrompt: string, 
     callbacks: StepCallbacks,
-    options?: { responseFormat?: { type: string }; thinking?: boolean },
+    options?: { responseFormat?: { type: string }; thinking?: boolean; minLen?: number },
     context?: WorkflowContext
   ): Promise<string> {
     const llmStore = useLLMStore.getState()
@@ -78,7 +78,7 @@ export abstract class BaseWorkflowCommand<TResult = string> {
             const cleaned = this.stripThinkingTags(raw)
             // v0.2.2: 空值/短内容保护增强 — 情节大纲等重度生成需200字，轻量50字
             // thinking 模型可能输出大量思考+超短正文
-            const minLen = (options?.responseFormat?.type === 'json_object') ? 20 : 200
+            const minLen = options?.minLen ?? (options?.responseFormat?.type === 'json_object' ? 20 : 200)
             if (!cleaned || cleaned.trim().length < minLen) {
               // 给 3 次自动重试：追加 "直接输出" 指令，抑制 thinking
               const RETRY_LIMIT = 3
@@ -92,7 +92,7 @@ export abstract class BaseWorkflowCommand<TResult = string> {
                 const retryMessages = [
                   { role: 'system', content: systemPrompt },
                   { role: 'user', content: prompt },
-                  { role: 'user', content: `(请直接输出正文，不要使用 reasoning/thinking 模式，不需要解释过程。请输出完整的、详细的内容，至少 ${minLen} 字。这是强制要求，请确保字数达标。)` }
+                  { role: 'user', content: `(请直接输出完整的章节/正文内容，包含所有已有内容和新增修改内容，而不仅仅是修改或新增的部分。至少 ${minLen} 字。这是强制要求。)` }
                 ]
                 const retryOptions = { ...options, thinking: false }
                 llmStore.generateStream(
@@ -152,14 +152,14 @@ export abstract class BaseWorkflowCommand<TResult = string> {
   protected async callLLMWithBuilder(
     builder: BasePromptBuilder,
     callbacks: StepCallbacks,
-    options?: { responseFormat?: { type: string }; thinking?: boolean },
+    options?: { responseFormat?: { type: string }; thinking?: boolean; minLen?: number },
     context?: WorkflowContext
   ): Promise<string> {
     // v0.2.2: 默认打开 thinking 模式（DeepSeek 等模型依赖 reasoning 生成高质量内容）
     // 关闭 thinking 会导致输出崩溃/乱码
     const agentRole = context?.data?.agentRole as string | undefined
     let systemPrompt = builder.getSystemRole()
-    const effectiveOptions = { thinking: true, ...(options ?? {}) }
+    const effectiveOptions = { thinking: true, ...options }
     if (agentRole) {
       const { agentRegistry } = await import('../../agent/agent-registry')
       const profile = agentRegistry.get(agentRole as any)
