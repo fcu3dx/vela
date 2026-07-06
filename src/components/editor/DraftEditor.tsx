@@ -405,7 +405,7 @@ export default function DraftEditor({ filePath, content }: Props) {
               title="选择专业 Agent"
             >
               <option value="">默认助手</option>
-              {agentRegistry.getAll().map((a) => (
+              {agentRegistry.listAll().map((a) => (
                 <option key={a.role} value={a.role}>{a.emoji} {a.label}</option>
               ))}
             </select>
