@@ -15,37 +15,12 @@
 
 PRD 要求 13 个 Agent，**100% 已注册** (`agent-registry.ts:13`):
 
-```
-story-architect      ✅  故事架构师      强推理 tier
-character-designer   ✅  角色设计师      中等 tier
-narrative-writer     ✅  叙事写手        中等 tier
-consistency-checker  ✅  一致性检查器    轻量 tier
-story-explorer       ✅  故事探索者      轻量 tier
-critic               ✅  审稿编辑        强推理 tier
-editor               ✅  编辑            中等 tier
-reader-sim           ✅  读者模拟器      中等 tier
-character-sim        ✅  角色模拟器      中等 tier
-brainstormer         ✅  脑暴者          任意 tier
-outliner             ✅  大纲师          中等 tier
-style-creator        ✅  风格创建师      中等 tier
-chronicler           ✅  编年史官        轻量 tier
-```
-
-**PRD 2.1.3 Agent 选择器**: ✅ 已实现 — AgentConversation.tsx 下拉 + ChapterCreationDialog + DraftEditor 全局选择
-
 ### 1.2 全流程 Agent 选择器 (v0.2.3 新增)
 
 **PRD 未涵盖的需求** (用户追加 v0.2.3): 所有工作流环节均可选择专业 Agent
 
-| 环节 | 状态 | 实现 |
-|------|------|------|
-| 写稿 (generate-draft) | ✅ | ChapterCreationDialog 下拉 + 传递 context → callLLMWithBuilder |
-| 审稿 (review-chapter) | ✅ | DraftEditor 下拉 + ReviewReport 继承 |
-| 审稿后修稿 (refine-from-review) | ✅ | DraftEditor 下拉 + ReviewReport → workflow |
-| 自定义修稿 (refine-draft) | ✅ | DraftEditor 下拉传递 |
-| 定稿 (finalize-chapter) | ✅ | DraftEditor 下拉传递 |
+### 1.3 Skills 生态 (28/28 ✅ v0.2.4)
 
-### 1.3 Skills 生态 (25/28)
 | PRD Skill | 状态 | 说明 |
 |-----------|------|------|
 | project-init | ✅ | 项目初始化 + 目录创建 |
@@ -62,58 +37,42 @@ chronicler           ✅  编年史官        轻量 tier
 | market-scan | ✅ | 市场扫榜 |
 | novel-import | ✅ | 逆向解析已有小说 |
 | cover-gen | ✅ | AI 封面生成 |
-| story-memory | ✅ | 事实提取+追踪 |
+| story-memory | ✅ | 事实提取 + 追踪 |
 | writing-modes | ✅ | 写作模式切换 |
 | writing-principles | ✅ | 写作原则 |
 | llm-discipline | ✅ | LLM 默认词检测 |
 | review-chapter | ✅ | 章节审阅（保留） |
 | brainstorm | ✅ | 创意脑暴（保留） |
 | character-analysis | ✅ | 角色深度分析（保留） |
-| continuity-check | ✅ | 连续性检查（保留+增强） |
+| continuity-check | ✅ | 连续性检查（保留 + 增强） |
 | writing-coach | ✅ | 写作教练（保留） |
-| research-assist | ✅ | 多源研究+引用 |
-| brand-voice | ❌ P2 | 品牌声音分析 |
-| headline-gen | ❌ P3 | 标题 A/B 变体 |
-| doc-export | ❌ P3 | 文档导出 DOCX/PPTX/PDF |
+| research-assist | ✅ | 多源研究 + 引用 |
+| **brand-voice** | ✅ v0.2.4 | 品牌声音分析 |
+| **headline-gen** | ✅ v0.2.4 | 标题 A/B 变体 |
+| **doc-export** | ✅ v0.2.4 | 文档导出 DOCX/PPTX/PDF |
+| **writing-toolbox** | ✅ v0.2.4 | 智能路由 (v0.2.3 已加入) |
 
 ### 1.4 项目文件结构 (✅)
 
 PRD 要求 7 个目录 — **100% 已实现** (`project-controller.ts` project:create handler):
 
-```
-设定/、大纲/、正文/、对标/、拆文库/、追踪/、参考资料/
-```
-
 ### 1.5 去 AI 味引擎 (✅)
 
-7 Gate 检测 + 三遍修复流程 + `deai-filter` skill 已注册
+7 Gate 检测 + 三遍修复流程 + `deai-filter` skill 已注册 + **编辑器气泡菜单快捷调用** (v0.2.4)
 
 ### 1.6 审稿多维度 (✅)
 
-`review-workflow.ts` 四维审查 (structure/character/writing/setting) + `ReviewPanel.s tsx` 结果展示
+`review-workflow.ts` 四维审查 (structure/character/writing/setting) + `ReviewPanel.tsx` 结果展示
 
 ### 1.7 番茄小说平台审核避规 (v0.2.3 新增)
 
 **全流程注入** — 写稿/审稿/修稿/审稿修稿 全部 4 个环节嵌入番茄规则：
 
-| 环节 | 注入方式 | 命令 |
-|------|---------|------|
-| 写稿 | tomatoGuard → mergedGuidance → {{global_guidance}} | generate-draft.command.ts |
-| 审稿 | tomatoRules → reviewFocus → {{review_focus}} | review-chapter.command.ts |
-| 修稿 | tomatoGuard 追加到 globalGuidance | refine-draft.command.ts |
-| 审稿后修稿 | tomatoGuard 追加到 globalGuidance | refine-from-review.command.ts |
-
 ### 1.8 定稿输出 (v0.2.3 新增)
 
 **三版本同时输出** (`finalize-chapter.command.ts`):
 
-| 版本 | 文件名 | 内容 |
-|------|--------|------|
-| 标准版 | `第N章 标题.txt` | 完整章节 |
-| 番茄小说版 | `第N章 标题【番茄小说版】.txt` | 去Markdown/段落优化/字数完整 |
-| 公众号版 | `第N章 标题_公众号版/上篇.txt` / `中篇.txt` / `下篇.txt` | Emoji引导 + "未完待续"/"点个在看"互动尾 |
-
-## 2. 技术架构增强 (v0.2.1-v0.2.3)
+## 2. 技术架构增强 (v0.2.1-v0.2.4)
 
 ### 2.1 输出质量防线 (base-command.ts)
 
@@ -176,16 +135,17 @@ PRD 要求 7 个目录 — **100% 已实现** (`project-controller.ts` project:c
 | 用户可见文本全中文 | ✅ P0 ⚠️ 工作流日志仍部分英文 |
 | 不破坏 SQLite schema | ✅ |
 
-## 5. 剩余缺口 (P1/P2/P3)
+## 5. 剩余缺口 (v0.2.5+)
 
 | # | 缺口 | 优先级 | 估算 |
 |---|------|--------|------|
-| 5 | brand-voice skill (品牌声音分析) | P2 | 1-2h |
-| 6 | headline-gen skill (标题 A/B 变体) | P3 | 1h |
-| 7 | doc-export skill (文档导出) | P3 | 2-3h |
-| 8 | 底部面板追踪/对标 tabs | P1 | 3-4h |
-| 9 | 右键菜单「去 AI 味」 | P1 | 2h |
-| 10 | 工作流日志全面中文化 | P2 | 1h |
+| 1 | 底部「追踪/对标」tabs UI (已实现) | ✅ v0.2.4 | - |
+| 2 | 底部「追踪」tab 实际数据源 | P1 | 2-3h |
+| 3 | 底部「对标」tab 实际数据源 | P1 | 2-3h |
+| 4 | 右键菜单「去 AI 味」(气泡已实现) | ✅ v0.2.4 | - |
+| 5 | 底部面板 tabs 与工作流联动 | P2 | 1-2h |
+
+**注**: v0.2.4 补齐了 PRD 28 Skills(100%) + UI 底部 2 面板 tabs(已实现).剩余工作是让追踪/对标面板显示实际内容而非说明页。
 
 ## 6. v0.2.3 热修复链 (已完成)
 
