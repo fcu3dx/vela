@@ -4,6 +4,8 @@ import { Sparkles, Search, BadgeCheck, Save, FileStack, FileText, Wrench } from 
 import { useProjectStore } from '../../stores/project-store'
 import { useEditorStore } from '../../stores/editor-store'
 import { useWorkflowStore } from '../../stores/workflow-store'
+import { agentRegistry } from '../../services/agent/agent-registry'
+import type { AgentRole } from '../../shared/agent-types'
 import CodeMirrorEditor from './CodeMirrorEditor'
 import ThreeWayMerge from './ThreeWayMerge'
 import { Button } from '../ui/Button'
@@ -104,6 +106,10 @@ export default function DraftEditor({ filePath, content }: Props) {
     Object.fromEntries(REVIEW_DIMS.map(d => [d.key, true]))
   )
   const [charCount, setCharCount] = useState(0)
+  /** v0.2.3: Agent 选择 */
+  const [selectedAgent, setSelectedAgent] = useState<AgentRole | ''>('')
+  /** v0.2.3: 定稿版本类型 */
+  const [finalizeVersion, setFinalizeVersion] = useState<'standard' | 'tomato' | 'wechat'>('standard')
   const isDirty = useEditorStore(s => s.tabs.find(t => t.filePath === filePath)?.dirty ?? false)
   const currentBodyRef = useRef(content)
 
@@ -146,6 +152,7 @@ export default function DraftEditor({ filePath, content }: Props) {
         draftPath: filePath,
         draftContent: body,
         userRefinePrompt: userRefinePrompt.trim() || undefined,
+        agentRole: selectedAgent || undefined,
       }), false)
     } catch (e) {
       toast.error(`修稿启动失败：${e}`)
@@ -167,6 +174,7 @@ export default function DraftEditor({ filePath, content }: Props) {
         draftPath: filePath,
         draftContent: body,
         reviewFocus: REVIEW_DIMS.filter(d => reviewDims[d.key]).map(d => d.label).join('、') || undefined,
+        agentRole: selectedAgent || undefined,
       }), false)
     } catch (e) {
       toast.error(`审稿启动失败：${e}`)
@@ -195,6 +203,8 @@ export default function DraftEditor({ filePath, content }: Props) {
         chapterTitle: meta.chapterTitle ?? '未知标题',
         draftPath: filePath,
         draftContent: body,
+        agentRole: selectedAgent || undefined,
+        finalizeVersion,
       }), false)
     } catch (e) {
       toast.error(`定稿启动失败：${e}`)
@@ -385,6 +395,33 @@ export default function DraftEditor({ filePath, content }: Props) {
                 审稿报告({reviewCount})
               </Button>
             )}
+
+            {/* v0.2.3: Agent 选择器 */}
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value as AgentRole | '')}
+              className="text-[0.7rem] bg-transparent border border-[--border-soft] rounded px-1.5 py-0.5 flex-shrink-0"
+              style={{ color: 'var(--color-text)', maxWidth: 120 }}
+              title="选择专业 Agent"
+            >
+              <option value="">默认助手</option>
+              {agentRegistry.getAll().map((a) => (
+                <option key={a.role} value={a.role}>{a.emoji} {a.label}</option>
+              ))}
+            </select>
+
+            {/* v0.2.3: 定稿版本选择器 */}
+            <select
+              value={finalizeVersion}
+              onChange={(e) => setFinalizeVersion(e.target.value as 'standard' | 'tomato' | 'wechat')}
+              className="text-[0.7rem] bg-transparent border border-[--border-soft] rounded px-1.5 py-0.5 flex-shrink-0"
+              style={{ color: 'var(--color-text)', maxWidth: 110 }}
+              title="定稿版本类型"
+            >
+              <option value="standard">标准版</option>
+              <option value="tomato">🍅 番茄小说版</option>
+              <option value="wechat">💬 公众号版</option>
+            </select>
 
             {/* AI 修稿 */}
             <Button

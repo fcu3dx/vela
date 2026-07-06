@@ -35,6 +35,8 @@ interface ReviewReportProps {
   chapterNumber?: number
   /** 章节目录 */
   chapterDir?: string
+  /** v0.2.3: Agent 选择（传递到审稿修稿工作流） */
+  agentRole?: string
 }
 
 // ===== 解析器 =====
@@ -179,7 +181,7 @@ const SEVERITY_META: Record<ReviewIssue['severity'], {
 }
 
 /** 审稿报告查看器 */
-export default function ReviewReport({ reportText, draftPath, chapterNumber, chapterDir }: ReviewReportProps) {
+export default function ReviewReport({ reportText, draftPath, chapterNumber, chapterDir, agentRole: agentRoleProp }: ReviewReportProps) {
   const { issues, summary } = parseReport(reportText)
   const [showRefineDialog, setShowRefineDialog] = useState(false)
   const [userRefinePrompt, setUserRefinePrompt] = useState('')
@@ -236,6 +238,7 @@ export default function ReviewReport({ reportText, draftPath, chapterNumber, cha
         reviewReport: reportText,
         reviewFileName,
         userRefinePrompt: userRefinePrompt.trim() || undefined,
+        agentRole: agentRoleProp || undefined,
       }), false)
     } finally {
       setProcessing(false)

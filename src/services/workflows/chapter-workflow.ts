@@ -234,6 +234,7 @@ export function createFinalizeWorkflow(params: FinalizeOnlyParams): WorkflowDefi
             draftContent: params.draftContent,
             chapterNumber: params.chapterNumber,
             chapterInfo,
+            finalizeVersion: params.finalizeVersion,
           })
           return cmd.execute({ step, context, callbacks })
         },

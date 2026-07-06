@@ -13,11 +13,43 @@ import {
 } from '../workflow-utils'
 import type { ChapterInfo } from '../chapter-workflow'
 
+// v0.2.3: 双版本定稿工具函数
+
+/** 番茄小说版适配：去多余空行、按 300 字加段落分割、去 Markdown 标记 */
+function refineForTomato(text: string): string {
+  return text
+    .replace(/^#{1,6} .*$/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/(.{250,350})\n/g, '$1\n\n')
+    .replace(/\n\n\n/g, '\n\n')
+    .trim()
+}
+
+/** 公众号版适配：加emoji段落引导、互动提问、字数可控 */
+function refineForWechat(text: string): string {
+  const emojis = ['📖', '✨', '💭', '🔥', '🎭', '🌟', '💫', '🌙']
+  let ei = 0
+  const result = text
+    .replace(/^#{1,6} .*$/gm, '')
+    .split(/\n\n/)
+    .map(p => {
+      if (p.trim().length < 20) return p
+      const emoji = emojis[ei % emojis.length]
+      ei++
+      return `${emoji} ${p.trim()}`
+    })
+    .join('\n\n')
+  return `${result}\n\n---\n\n💬 喜欢这篇吗？评论区聊聊你的感受吧～\n👇 关注我，不错过下一章`
+}
+
 export interface FinalizeChapterParams {
   draftPath: string
   draftContent: string
   chapterNumber: number
   chapterInfo: ChapterInfo
+  /** v0.2.3: 定稿版本类型 */
+  finalizeVersion?: 'standard' | 'tomato' | 'wechat'
 }
 
 // ===== 工具函数：流式调用大模型并返回完整文本 =====
@@ -245,30 +277,48 @@ export class FinalizeChapterCommand extends BaseWorkflowCommand<void> {
     if (!project) throw new Error('未打开项目')
 
     const refinedDraftText = this.params.draftContent
-    if (!refinedDraftText) throw new Error('没有定稿内容')
+        if (!refinedDraftText) throw new Error('没有定稿内容')
 
-    callbacks.log('\n===== 开始定稿与后处理分析 =====')
+        callbacks.log('\n===== 开始定稿与后处理分析 =====')
 
-    // 1. 获取对应草稿并将库内状态变更为 finalized（同时同步定稿期可能微调过的正文）
-    const { parseDraftMeta } = await import('../chapter-workflow')
-    const dbDraft = await parseDraftMeta(this.params.draftPath)
-    if (!dbDraft) throw new Error('内部状态流转异常：无法在数据库中定位该草稿源文件或解析路径版本')
+        // 1. 获取对应草稿并将库内状态变更为 finalized
+        const { parseDraftMeta } = await import('../chapter-workflow')
+        const dbDraft = await parseDraftMeta(this.params.draftPath)
+        if (!dbDraft) throw new Error('内部状态流转异常')
 
-    await ipc.invoke('db:draft-update-content', dbDraft.id, refinedDraftText, refinedDraftText.length)
-    await ipc.invoke('db:draft-update-status', dbDraft.id, 'finalized', refinedDraftText.length)
+        await ipc.invoke('db:draft-update-content', dbDraft.id, refinedDraftText, refinedDraftText.length)
+        await ipc.invoke('db:draft-update-status', dbDraft.id, 'finalized', refinedDraftText.length)
 
-    // 【重要】：除了写入 DB，对于已定稿的章节需要实体化为物理文件放在根目录，供外部系统读取或备份
-    const safeTitle = this.params.chapterInfo.title ? ` ${this.params.chapterInfo.title.replace(/[/\\]/g, '_')}` : ''
-    const physicalPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}.txt`
-    try {
-      const titleLine = this.params.chapterInfo.title ? `第${this.params.chapterNumber}章 ${this.params.chapterInfo.title}\n\n` : `第${this.params.chapterNumber}章\n\n`
-      const contentToWrite = titleLine + refinedDraftText.replace(/^#+ .*\n*/, '')
-      await ipc.invoke('fs:write-file', physicalPath, contentToWrite)
-    } catch (e) {
-      callbacks.log(`⚠️ 写入根目录物理文件失败: ${String(e)}`)
-    }
+        // 写入标准版物理文件
+        const safeTitle = this.params.chapterInfo.title ? ` ${this.params.chapterInfo.title.replace(/[/\\]/g, '_')}` : ''
+        const physicalPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}.txt`
+        try {
+          const titleLine = this.params.chapterInfo.title ? `第${this.params.chapterNumber}章 ${this.params.chapterInfo.title}\n\n` : `第${this.params.chapterNumber}章\n\n`
+          const contentToWrite = titleLine + refinedDraftText.replace(/^#+ .*\n*/, '')
+          await ipc.invoke('fs:write-file', physicalPath, contentToWrite)
+        } catch (e) {
+          callbacks.log(`⚠️ 写入根目录物理文件失败: ${String(e)}`)
+        }
 
-    callbacks.log(`✅ 定稿内容已正式写入 SQLite 数据库并同步为根目录文件 (第${this.params.chapterNumber}章${safeTitle}.txt)`)
+        // v0.2.3: 双版本定稿输出
+        const version = this.params.finalizeVersion || 'standard'
+        if (version === 'tomato') {
+          callbacks.log('🍅 生成番茄小说适配版本...')
+          const tomatoPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}【番茄小说版】.txt`
+          try {
+            await ipc.invoke('fs:write-file', tomatoPath, refineForTomato(refinedDraftText))
+            callbacks.log(`✅ 番茄小说版已写出: ${tomatoPath}`)
+          } catch (e) { callbacks.log(`⚠️ 番茄版写出失败: ${String(e)}`) }
+        } else if (version === 'wechat') {
+          callbacks.log('💬 生成微信公众号适配版本...')
+          const wechatPath = `${project.path}/第${this.params.chapterNumber}章${safeTitle}【公众号版】.txt`
+          try {
+            await ipc.invoke('fs:write-file', wechatPath, refineForWechat(refinedDraftText))
+            callbacks.log(`✅ 公众号版已写出: ${wechatPath}`)
+          } catch (e) { callbacks.log(`⚠️ 公众号版写出失败: ${String(e)}`) }
+        }
+
+        callbacks.log(`✅ 定稿内容已正式写入 SQLite 数据库并同步为根目录文件 (第${this.params.chapterNumber}章${safeTitle}.txt)`)
 
     // 3. 通过 PostProcessPipeline 执行后处理（状态持久化 + 支持重试）
     callbacks.log('🚀 正在启动后台大模型推演系统更新全书状态...')
