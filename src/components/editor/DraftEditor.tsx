@@ -411,7 +411,7 @@ export default function DraftEditor({ filePath, content }: Props) {
             >
               <option value="">默认助手</option>
               {agentRegistry.listAll().map((a) => (
-                <option key={a.role} value={a.role}>{a.emoji} {a.label}</option>
+                <option key={a.role} value={a.role}>{a.emoji} {a.displayName}</option>
               ))}
             </select>
 

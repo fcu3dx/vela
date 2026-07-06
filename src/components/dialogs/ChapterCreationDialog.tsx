@@ -322,7 +322,7 @@ export default function ChapterCreationDialog({ isOpen, onClose, prefill }: Prop
                   <option value="">默认助手（通用型）</option>
                   {agentRegistry.listAll().map((agent) => (
                     <option key={agent.role} value={agent.role}>
-                      {agent.emoji} {agent.label} — {agent.desc?.slice(0, 60)}{agent.desc && agent.desc.length > 60 ? '...' : ''}
+                      {agent.emoji} {agent.displayName} — {agent.description?.slice(0, 60)}{agent.description && agent.description.length > 60 ? '...' : ''}
                     </option>
                   ))}
                 </NativeSelect>

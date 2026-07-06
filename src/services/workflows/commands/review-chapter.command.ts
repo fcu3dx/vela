@@ -18,7 +18,7 @@ export class ReviewChapterCommand extends BaseWorkflowCommand<string> {
     super()
   }
 
-  async execute({ callbacks }: CommandExecuteParams): Promise<string> {
+  async execute({ callbacks, context }: CommandExecuteParams): Promise<string> {
     const project = useProjectStore.getState().currentProject
     if (!project) throw new Error('未打开项目')
 
