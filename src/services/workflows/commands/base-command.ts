@@ -76,19 +76,39 @@ export abstract class BaseWorkflowCommand<TResult = string> {
             callbacks.setProgress(90)
             const raw = text || fullContent
             const cleaned = this.stripThinkingTags(raw)
-            // v0.2.2: 空值/短内容保护增强 — 情节大纲等重度生成需200字，轻量50字
-            // thinking 模型可能输出大量思考+超短正文
+            // v0.2.3: 中文正文质量检测 — AI 跑题时自动重试
+            // 如果输出全是英文/JSON/代码/技术文档(中文字符占比 < 30%)，视为跑题
+            let qualityIssue = ''
+            if (cleaned && cleaned.trim().length > 0) {
+              const chineseChars = (cleaned.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g) || []).length
+              const totalChars = cleaned.replace(/\s/g, '').length
+              const chineseRatio = totalChars > 0 ? chineseChars / totalChars : 0
+              if (chineseRatio < 0.30 && totalChars > 60) {
+                qualityIssue = `跑题(中文占比${Math.round(chineseRatio*100)}%`
+              } else {
+                // 检测明显的非小说结构: JSON/markdown 代码块占主内容
+                const jsonLineCount = (cleaned.match(/^\s*[{[]|^\s*"\w+"\s*:/gm) || []).length
+                const codeBlockChars = (cleaned.match(/```[\s\S]*?```/g) || []).reduce((s, b) => s + b.length, 0)
+                if (codeBlockChars > cleaned.length * 0.5) {
+                  qualityIssue = '跑题(代码块为主)'
+                } else if (jsonLineCount > cleaned.split('\n').length * 0.4 && totalChars < 600) {
+                  qualityIssue = '跑题(JSON/数据结构)'
+                }
+              }
+            }
             const minLen = options?.minLen ?? (options?.responseFormat?.type === 'json_object' ? 20 : 200)
-            if (!cleaned || cleaned.trim().length < minLen) {
+            if (!cleaned || cleaned.trim().length < minLen || qualityIssue) {
               // 给 3 次自动重试：追加 "直接输出" 指令，抑制 thinking
               const RETRY_LIMIT = 3
               const doRetry = (attempt: number): void => {
                 if (attempt > RETRY_LIMIT) {
-                  callbacks.log(`❌ 重试${RETRY_LIMIT}次后仍不足${minLen}字`)
-                  reject(new Error(`AI 连续${RETRY_LIMIT+1}次返回内容过短（不足${minLen}字），请检查模型配置或缩短上下文`))
+                  const reason = qualityIssue ? `${qualityIssue}+不足${minLen}字` : `不足${minLen}字`
+                  callbacks.log(`❌ 重试${RETRY_LIMIT}次后${reason}`)
+                  reject(new Error(`AI 连续${RETRY_LIMIT+1}次${reason}，请检查模型配置或缩短上下文`))
                   return
                 }
-                callbacks.log(`⚠️ AI 返回内容过短(不足${minLen}字)，正在自动重试 (第${attempt+1}次)...`)
+                const reasonTag = qualityIssue ? `(${qualityIssue}) ` : ''
+                callbacks.log(`⚠️ AI 返回${reasonTag}过短(不足${minLen}字)，正在自动重试 (第${attempt+1}次)...`)
                 const retryMessages = [
                   { role: 'system', content: systemPrompt },
                   { role: 'user', content: prompt },
