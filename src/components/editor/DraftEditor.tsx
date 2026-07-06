@@ -603,6 +603,27 @@ export default function DraftEditor({ filePath, content }: Props) {
             </div>
           )}
 
+          {/* v0.2.6: Agent 选择器 — 审稿/修稿弹窗均可选专家 */}
+          <div className="px-5 pb-3">
+            <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+              选择专家 Agent（可选）：
+            </label>
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value as AgentRole | '')}
+              className="w-full text-sm bg-[var(--color-bg)] border border-[var(--color-border)] rounded-md px-3 py-1.5"
+              style={{ color: 'var(--color-text)' }}
+            >
+              <option value="">默认助手</option>
+              {agentRegistry.listAll().map((a) => (
+                <option key={a.role} value={a.role}>
+                  {a.emoji} {a.displayName} — {a.description?.slice(0, 50)}
+                  {a.description && a.description.length > 50 ? '...' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmAction(null)}>取消</Button>
             <Button
