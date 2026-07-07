@@ -421,7 +421,7 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
         const request = {
           modelId: mid,
           messages: messages.map(m => ({ role: m.role, content: m.content })),
-          maxTokens: 4096,     // Agent 需要足够 Token 空间来输出推理 + tool_call
+          maxTokens: 8192,     // v0.2.6: Agent 需要足够 Token 空间来输出推理 + tool_call
           temperature: 0.7,    // 创作场景适度随机
         }
         const response = await (window as unknown as { velaAPI: { invoke: (ch: string, ...args: unknown[]) => Promise<unknown> } }).velaAPI.invoke('llm:generate', request)
