@@ -50,10 +50,8 @@ export interface FinalizeOnlyParams {
   chapterTitle: string
   draftPath: string
   draftContent: string
-  /** v0.2.3: Agent 选择 + 双版本输出 */
+  /** v0.2.6: Agent 选择 */
   agentRole?: string
-  /** v0.2.3: 定稿版本类型 */
-  finalizeVersion?: 'standard' | 'tomato' | 'wechat'
 }
 
 export interface ReviewOnlyParams {
@@ -152,6 +150,10 @@ export function createRefineOnlyWorkflow(params: RefineOnlyParams): WorkflowDefi
         name: '修稿',
         description: '将草稿提升到大神级质量，保存修稿并打开合并视图',
         executor: async (step, context, callbacks) => {
+          if (params.agentRole) {
+            context.data.agentRole = params.agentRole
+            callbacks.log(`🎯 修稿专家: ${params.agentRole}`)
+          }
           const { RefineDraftCommand } = await import('./commands/refine-draft.command')
           const cmd = new RefineDraftCommand({
             draftPath: params.draftPath,
@@ -203,6 +205,10 @@ export function createReviewOnlyWorkflow(params: ReviewOnlyParams): WorkflowDefi
         name: '审稿',
         description: '一致性检查（角色/剧情/世界观），生成审稿报告',
         executor: async (step, context, callbacks) => {
+          if (params.agentRole) {
+            context.data.agentRole = params.agentRole
+            callbacks.log(`🎯 审稿专家: ${params.agentRole}`)
+          }
           const { ReviewChapterCommand } = await import('./commands/review-chapter.command')
           const cmd = new ReviewChapterCommand({
             draftPath: params.draftPath,
@@ -234,7 +240,6 @@ export function createFinalizeWorkflow(params: FinalizeOnlyParams): WorkflowDefi
             draftContent: params.draftContent,
             chapterNumber: params.chapterNumber,
             chapterInfo,
-            finalizeVersion: params.finalizeVersion,
           })
           return cmd.execute({ step, context, callbacks })
         },
