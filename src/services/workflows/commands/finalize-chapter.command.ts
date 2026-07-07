@@ -286,40 +286,49 @@ export class FinalizeChapterCommand extends BaseWorkflowCommand<void> {
           callbacks.log(`✅ 番茄小说版已写出 (${tomatoContent.length}字): ${tomatoPath}`)
         } catch (e) { callbacks.log(`⚠️ 番茄版写出失败: ${String(e)}`) }
 
-        // 3. 微信公众号版（按自然段落拆成2-3篇，内容不变、总字数不变）
-        const wechatDir = `${project.path}/第${this.params.chapterNumber}章${safeTitle}_公众号版`
-        try {
-          await ipc.invoke('fs:mkdir', wechatDir)
-          const paragraphs = refinedDraftText
-            .replace(/^#{1,6}\\s+.*$/gm, '')
-            .split(/\\n\\n+/)
-            .map(p => p.trim())
-            .filter(p => p.length > 0)
-          const totalParagraphs = paragraphs.length
-          const sections = totalParagraphs <= 6 ? 2 : 3
-          const perSection = Math.ceil(totalParagraphs / sections)
-          const emojis = ['📖', '✨', '💭', '🔥', '🎭', '🌟', '💫', '🌙']
-          const sectionTitles = ['上篇', '中篇', '下篇']
-          for (let si = 0; si < sections; si++) {
-            const start = si * perSection
-            const end = Math.min((si + 1) * perSection, totalParagraphs)
-            if (start >= totalParagraphs) break
-            const sectionParagraphs = paragraphs.slice(start, end)
-            const content = sectionParagraphs
-              .map((p, i) => {
-                if (p.length < 20) return p
-                const emoji = emojis[(si * perSection + i) % emojis.length]
-                return `${emoji} ${p}`
-              })
-              .join('\\n\\n')
-            const footer = si === sections - 1
-              ? '\\n\\n---\\n\\n💬 如果喜欢这篇故事，点个「在看」告诉我～\\n👇 关注我，不错过后续更新！'
-              : '\\n\\n---\\n\\n📌 未完待续，点击关注看下篇～'
-            const sectionPath = `${wechatDir}/${sectionTitles[si]}.txt`
-            await ipc.invoke('fs:write-file', sectionPath, content + footer)
-            callbacks.log(`✅ 公众号版·${sectionTitles[si]}已写出: ${sectionPath}`)
-          }
-        } catch (e) { callbacks.log(`⚠️ 公众号版写出失败: ${String(e)}`) }
+        // 3. 微信公众号版（按 ~1000 字/篇 自然段落拆分）
+                const wechatDir = `${project.path}/第${this.params.chapterNumber}章${safeTitle}_公众号版`
+                try {
+                  await ipc.invoke('fs:mkdir', wechatDir)
+                  const paragraphs = refinedDraftText
+                    .replace(/^#{1,6}\s+.*$/gm, '')
+                    .split(/\n\n+/)
+                    .map(p => p.trim())
+                    .filter(p => p.length > 0)
+                  // v0.2.6: 按字数分篇，每篇 ~1000 字
+                  const CHARS_PER_SECTION = 1000
+                  const totalChars = paragraphs.reduce((sum, p) => sum + p.length, 0)
+                  const sectionCount = Math.max(1, Math.min(3, Math.round(totalChars / CHARS_PER_SECTION)))
+                  // 将段落分配到各篇，尽量使每篇字数接近 CHARS_PER_SECTION
+                  const sections: string[][] = Array.from({ length: sectionCount }, () => [])
+                  const sectionLengths: number[] = Array.from({ length: sectionCount }, () => 0)
+                  for (const p of paragraphs) {
+                    let minIdx = 0
+                    for (let i = 1; i < sectionCount; i++) {
+                      if (sectionLengths[i] < sectionLengths[minIdx]) minIdx = i
+                    }
+                    sections[minIdx].push(p)
+                    sectionLengths[minIdx] += p.length
+                  }
+                  const emojis = ['📖', '✨', '💭', '🔥', '🎭', '🌟', '💫', '🌙']
+                  const sectionTitles = ['上篇', '中篇', '下篇']
+                  for (let si = 0; si < sections.length; si++) {
+                    const sectionParagraphs = sections[si]
+                    const content = sectionParagraphs
+                      .map((p, i) => {
+                        if (p.length < 20) return p
+                        const emoji = emojis[((si * 100) + i) % emojis.length]
+                        return `${emoji} ${p}`
+                      })
+                      .join('\n\n')
+                    const footer = si === sections.length - 1
+                      ? '\n\n---\n\n💬 如果喜欢这篇故事，点个「在看」告诉我～\n👇 关注我，不错过后续更新！'
+                      : '\n\n---\n\n📌 未完待续，点击关注看下篇～'
+                    const sectionPath = `${wechatDir}/${sectionTitles[si]}.txt`
+                    await ipc.invoke('fs:write-file', sectionPath, content + footer)
+                    callbacks.log(`✅ 公众号版·${sectionTitles[si]}已写出 (${content.length}字): ${sectionPath}`)
+                  }
+                } catch (e) { callbacks.log(`⚠️ 公众号版写出失败: ${String(e)}`) }
 
         callbacks.log(`✅ 定稿内容已正式写入 SQLite 数据库并同步为根目录文件 (第${this.params.chapterNumber}章${safeTitle}.txt)`)
 
