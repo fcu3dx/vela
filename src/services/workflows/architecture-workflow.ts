@@ -235,7 +235,7 @@ export function createCharacterExtractSteps(_projectPath: string, characterDynam
               onError: (err) => reject(new Error(err))
             },
             undefined,
-            { responseFormat: { type: 'json_object' } }
+            undefined  // v0.2.6: 去掉 json_object，避免模型因格式限制提前终止输出空数组
           )
         })
 
