@@ -945,12 +945,14 @@ severity 取值：error=严重矛盾强烈建议修复, warning=轻微不一致�
     key: 'extract_initial_characters',
     name: '提取初始角色卡',
     description: '从角色图谱纯文本中提取结构化角色卡数据，用于架构生成后自动创建角色卡 JSON 文件',
-    systemRole: '你是一位专业的小说数据结构化专家。',
+    systemRole: '你是数据结构化引擎，直接输出纯 JSON，不调用任何工具，不输出 markdown 标注。',
     variables: {
       character_dynamics: '角色图谱纯文本',
       genre: '小说类型',
     },
-    content: `请从以下角色图谱文本中提取所有重要角色的结构化信息。
+    content: `你是数据结构化器，直接输出 JSON 数组——不要调用任何工具，不要输出工具标签，不要用 markdown 代码块包裹。
+
+请从以下角色图谱文本中提取所有重要角色的结构化信息。
 
 【角色图谱文本】
 {{character_dynamics}}
