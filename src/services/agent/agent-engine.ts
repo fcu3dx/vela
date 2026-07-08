@@ -128,10 +128,10 @@ export async function runAgentLoop(
     const { textParts, toolCalls } = parseToolCalls(llmResponse)
 
     // v0.2.6: 如果上一轮所有 tool_call 都失败，提前退出避免无限自循环
-    if (rounds > 1 && allToolCalls.length > 0) {
-      const lastRoundCalls = allToolCalls.filter(c => c.status === 'failed')
-      const totalLastRound = allToolCalls.slice(-toolCalls.length).length
-      if (lastRoundCalls.length === totalLastRound && totalLastRound > 0) {
+    if (rounds > 1 && toolCalls.length > 0 && allToolCalls.length >= toolCalls.length) {
+      const lastRoundEntries = allToolCalls.slice(-toolCalls.length)
+      const allFailed = lastRoundEntries.every(c => c.status === 'failed')
+      if (allFailed) {
         fullAssistantText += '\n\n⚠️ 工具连续执行失败，已自动停止。请检查工具参数或项目状态。'
         callbacks.onDone(fullAssistantText, allToolCalls, allArtifacts)
         return
