@@ -19,8 +19,8 @@ interface WorkflowItem {
 
 export default function WorkflowPanel() {
   const startWorkflow = useWorkflowStore(s => s.startWorkflow)
-  const activeRun = useWorkflowStore(s => s.activeRun)
-  const isRunning = activeRun !== null
+  const activeRuns = useWorkflowStore(s => s.activeRuns)
+  const isRunning = activeRuns.length > 0
 
   const workflows: WorkflowItem[] = [
     {

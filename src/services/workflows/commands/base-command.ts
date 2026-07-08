@@ -109,7 +109,7 @@ export abstract class BaseWorkflowCommand<TResult = string> {
                 }
                 const reasonTag = qualityIssue ? `(${qualityIssue}) ` : ''
                 callbacks.log(`⚠️ AI 返回${reasonTag}过短(不足${minLen}字)，正在自动重试 (第${attempt+1}次)...`)
-                const retryMessages = [
+                const retryMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
                   { role: 'system', content: systemPrompt },
                   { role: 'user', content: prompt },
                   { role: 'user', content: `(请直接输出完整的章节/正文内容，包含所有已有内容和新增修改内容，而不仅仅是修改或新增的部分。至少 ${minLen} 字。这是强制要求。)` }

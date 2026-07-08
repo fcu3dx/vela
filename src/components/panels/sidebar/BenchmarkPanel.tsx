@@ -6,15 +6,15 @@
  */
 
 import { useState } from 'react'
-import { Play, Search, BookOpen, Download, Loader2, ChevronsUpDown } from 'lucide-react'
+import { Search, BookOpen, Download, Loader2, ChevronsUpDown } from 'lucide-react'
 import { useWorkflowStore } from '../../../stores/workflow-store'
 import { createBenchmarkWorkflow, BENCHMARK_MODES, BENCHMARK_AGENTS, type BenchmarkMode } from '../../../services/workflows/benchmark-workflow'
 import type { AgentRole } from '../../../shared/agent-types'
 
 export default function BenchmarkPanel() {
   const startWorkflow = useWorkflowStore(s => s.startWorkflow)
-  const activeRun = useWorkflowStore(s => s.activeRun)
-  const isRunning = activeRun !== null
+  const activeRuns = useWorkflowStore(s => s.activeRuns)
+  const isRunning = activeRuns.length > 0
 
   const [selectedMode, setSelectedMode] = useState<BenchmarkMode>('analyze')
   const [bookTitle, setBookTitle] = useState('')

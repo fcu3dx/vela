@@ -307,7 +307,8 @@ export const deaiFilterTool = buildAgentTool({
     // 如果没有直接传文本，尝试从编辑器获取
     if (!inputText) {
       const editorStore = useEditorStore.getState()
-      const selection = editorStore.selectedText
+      const activeTab = editorStore.tabs.find(t => t.id === editorStore.activeTabId)
+      const selection = activeTab?.content ?? ''
       if (selection && selection.trim()) {
         inputText = selection
       }

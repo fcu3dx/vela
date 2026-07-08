@@ -5,7 +5,7 @@
  * 支持选择审稿维度 + 选择审稿专家 Agent。
  */
 
-import type { WorkflowDefinition, StepCallbacks } from '../../stores/workflow-store'
+import type { WorkflowDefinition } from '../../stores/workflow-store'
 import { useLLMStore } from '../../stores/llm-store'
 import { useProjectStore } from '../../stores/project-store'
 import { agentRegistry } from '../agent/agent-registry'

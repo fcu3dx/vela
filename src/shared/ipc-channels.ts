@@ -160,6 +160,7 @@ export interface ProjectData {
 }
 
 export interface NovelConfig {
+  [key: string]: unknown
   genre: string
   subGenre: string
   targetAudience: string
