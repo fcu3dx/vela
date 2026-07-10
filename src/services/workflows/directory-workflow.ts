@@ -160,27 +160,17 @@ export function createDirectoryWorkflow(params: DirectoryWorkflowParams = { mode
       {
         name: '保存蓝图',
         description: `将章节蓝图批量写入 SQLite 数据库`,
-        executor: async (_step, context, callbacks) => {
+        executor: async (_step, _context, callbacks) => {
           const project = useProjectStore.getState().currentProject
           if (!project) throw new Error('未打开项目')
 
-          const newBlueprints = context.data.newBlueprints as ChapterBlueprint[]
-          const existingBlueprints = context.data.existingBlueprints as ChapterBlueprint[]
-
-          callbacks.log('保存蓝图到数据库...')
-
-          let merged: ChapterBlueprint[]
-          if (params.mode === 'full') {
-            merged = newBlueprints
-            // TODO: 若需要清理冗余蓝图，可考虑添加 db:blueprint-delete-all 以严格符合全量替换的意图。
-            // 在当前 upsert-many 中，仅覆盖更新
-          } else {
-            const existingMap = new Map(existingBlueprints.map(b => [b.chapterNumber, b]))
-            for (const nb of newBlueprints) existingMap.set(nb.chapterNumber, nb)
-            merged = Array.from(existingMap.values()).sort((a, b) => a.chapterNumber - b.chapterNumber)
-          }
-
-          await saveAllBlueprints(merged)
+          callbacks.log('验证蓝图入库...')
+          
+          // v0.2.7 FIX: 直接从 DB 读取已保存的蓝图（批次保存在 Step 2 已完成）
+          // 避免依赖 context.data 可能出现的时序问题导致前 12 章丢失
+          const merged = await loadDirectoryBlueprints()
+          
+          callbacks.log(`已验证 ${merged.length} 章蓝图入库完成`)
           useProjectStore.getState().refreshFileTree()
           return '已保存蓝图'
         },
