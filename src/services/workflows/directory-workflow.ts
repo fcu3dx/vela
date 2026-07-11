@@ -165,11 +165,30 @@ export function createDirectoryWorkflow(params: DirectoryWorkflowParams = { mode
         agentRole: 'blueprint-agent',
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
+          {
+            name: 'duplicate',
+            type: 'duplicate',
+            severity: 'warning',
+            validator: async (_output, ctx) => {
+              const blueprints = (ctx.data.blueprints || []) as Array<{ chapterNumber: number }>
+              const existing = (ctx.data.existingBlueprints || []) as Array<{ chapterNumber: number }>
+              const existingNums = new Set(existing.map(b => b.chapterNumber))
+              const issues: Array<{ severity: 'blocker' | 'warning'; message: string }> = []
+              for (const bp of blueprints) {
+                if (existingNums.has(bp.chapterNumber)) {
+                  issues.push({ severity: 'warning', message: `第 ${bp.chapterNumber} 章已存在，续跑模式应跳过` })
+                }
+              }
+              return { gateName: 'duplicate', gateType: 'duplicate', passed: issues.length === 0, issues }
+            },
+          },
         ],
         executor: async (_step, context, callbacks) => {
           const { GenerateDirectoryCommand } = await import('./commands/directory.command')
           const cmd = new GenerateDirectoryCommand(params)
           const blueprints = await cmd.execute({ step: _step, context, callbacks })
+          // 保存到 context 供后续 gate 使用
+          context.data.blueprints = blueprints
           // 返回可读摘要字符串（step.result 必须是 string，否则 AIOutputPanel 渲染会崩溃）
           return `已生成 ${blueprints.length} 章蓝图`
         },

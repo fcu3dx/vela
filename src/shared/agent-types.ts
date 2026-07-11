@@ -10,20 +10,23 @@
 
 /** Agent 角色标识 */
 export type AgentRole =
-  | 'general'             // 通用助手(默认, 兼容原有行为)
+  | 'general'             // 通用助手 (默认，兼容原有行为)
   | 'story-architect'     // 故事架构师
   | 'character-designer'  // 角色设计师
   | 'narrative-writer'    // 叙事写手
   | 'consistency-checker' // 一致性检查器
   | 'story-explorer'      // 故事探索者
-  | 'critic'              // 评论者(深度对抗式批评)
-  | 'editor'              // 编辑(整体书编辑视角)
+  | 'critic'              // 评论者 (深度对抗式批评)
+  | 'editor'              // 编辑 (整体书编辑视角)
   | 'reader-sim'          // 读者模拟器
   | 'character-sim'       // 角色模拟器
-  | 'brainstormer'        // 脑暴者(创意选项生成)
+  | 'brainstormer'        // 脑暴者 (创意选项生成)
   | 'outliner'            // 大纲师
   | 'style-creator'       // 风格创建器
-  | 'chronicler'          // 编年史家(事实提取)
+  | 'chronicler'          // 编年史家 (事实提取)
+  | 'blueprint-agent'     // v0.3.0: 蓝图师
+  | 'refinement-editor'   // v0.3.0: 精修师
+  | 'quality-gate'        // v0.3.0: 质量门卫
 
 // ===== Agent 模型档位 =====
 
