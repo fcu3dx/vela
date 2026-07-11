@@ -32,6 +32,20 @@ export class GenerateDirectoryCommand extends BaseWorkflowCommand<ChapterBluepri
       endChapter = Math.min(this.params.count, totalChapters)
     }
 
+    // v0.2.7: full 模式断点续跑 — 检测已入库蓝图，从最后一章+1 继续
+    // 解决网络中断后再跑 full 模式不会跳过已生成章节的问题
+    if (this.params.mode === 'full' && existingBlueprints.length > 0) {
+      const maxExisting = Math.max(...existingBlueprints.map(b => b.chapterNumber))
+      if (maxExisting >= startChapter) {
+        startChapter = maxExisting + 1
+        if (startChapter > endChapter) {
+          callbacks.log('✅ 所有章节蓝图均已生成，无需重复执行')
+          return existingBlueprints
+        }
+        callbacks.log(`📌 检测到 ${existingBlueprints.length} 章已入库，从第 ${startChapter} 章继续生成...`)
+      }
+    }
+
     callbacks.log(`生成第 ${startChapter}–${endChapter} 章蓝图...`)
 
     // 从当前默认模型获取 maxTokens，动态计算每批次章节数
