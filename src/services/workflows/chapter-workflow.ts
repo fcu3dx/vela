@@ -149,6 +149,10 @@ export function createRefineOnlyWorkflow(params: RefineOnlyParams): WorkflowDefi
       {
         name: '修稿',
         description: '将草稿提升到大神级质量，保存修稿并打开合并视图',
+        agentRole: 'refinement-editor',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (step, context, callbacks) => {
           if (params.agentRole) {
             context.data.agentRole = params.agentRole
@@ -178,6 +182,9 @@ export function createRefineFromReviewWorkflow(params: RefineFromReviewParams): 
       {
         name: '审稿驱动修稿',
         description: '根据审稿报告精准修复问题调用 Command',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (step, context, callbacks) => {
           const { RefineFromReviewCommand } = await import('./commands/refine-from-review.command')
           const cmd = new RefineFromReviewCommand({
@@ -204,6 +211,10 @@ export function createReviewOnlyWorkflow(params: ReviewOnlyParams): WorkflowDefi
       {
         name: '审稿',
         description: '一致性检查（角色/剧情/世界观），生成审稿报告',
+        agentRole: params.agentRole || 'critic',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (step, context, callbacks) => {
           if (params.agentRole) {
             context.data.agentRole = params.agentRole

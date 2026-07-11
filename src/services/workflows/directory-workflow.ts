@@ -161,6 +161,11 @@ export function createDirectoryWorkflow(params: DirectoryWorkflowParams = { mode
       {
         name: '生成蓝图',
         description: '基于架构文件生成全书章节蓝图',
+        resumable: true,
+        agentRole: 'blueprint-agent',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (_step, context, callbacks) => {
           const { GenerateDirectoryCommand } = await import('./commands/directory.command')
           const cmd = new GenerateDirectoryCommand(params)

@@ -59,7 +59,11 @@ export function createReviewWorkflow(params: ReviewWorkflowParams = {}): Workflo
     steps: [
       {
         name: '审稿执行',
-        description: `维度: ${dimLabels.join('、')}`,
+        description: `维度：${dimLabels.join('、')}`,
+        agentRole: params.agentRole || 'critic',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (_step, context, callbacks) => {
           callbacks.log('🔍 准备审稿内容...')
 

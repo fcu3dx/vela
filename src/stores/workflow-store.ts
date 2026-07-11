@@ -21,6 +21,8 @@ export interface WorkflowStep {
   startedAt?: string
   completedAt?: string
   logs: string[]
+  /** v0.3.0: 门禁检查结果 */
+  gateResults?: GateResult[]
 }
 
 /** 工作流运行实例 */
@@ -53,6 +55,37 @@ export type StepExecutor = (
   context: WorkflowContext,
   callbacks: StepCallbacks,
 ) => Promise<string | void>
+
+/** v0.3.0: 工作流步骤的门禁检查结果 */
+export interface GateResult {
+  /** 门禁名称 */
+  gateName: string
+  /** 门禁类型 */
+  gateType: 'format' | 'duplicate' | 'consistency' | 'size' | 'custom'
+  /** 是否通过 */
+  passed: boolean
+  /** 门禁日志 */
+  issues: GateIssue[]
+}
+
+export interface GateIssue {
+  /** 严重级别 */
+  severity: 'blocker' | 'warning'
+  /** 描述信息 */
+  message: string
+}
+
+/** v0.3.0: 工作流门禁定义 */
+export interface WorkflowGate {
+  /** 门禁名称 */
+  name: string
+  /** 门禁类型 */
+  type: 'format' | 'duplicate' | 'consistency' | 'size' | 'custom'
+  /** 阻断或仅警告 */
+  severity: 'blocker' | 'warning'
+  /** 自定义验证器（可选，内置 type 有默认实现） */
+  validator?: (output: string, context: WorkflowContext) => Promise<GateResult>
+}
 
 /** 工作流上下文（共享数据） */
 export interface WorkflowContext {
@@ -93,6 +126,12 @@ export interface WorkflowDefinition {
     executor: StepExecutor
     /** v0.2.1: 失败时是否继续执行后续步骤（默认 false） */
     continueOnError?: boolean
+    /** v0.3.0: 该步骤推荐的 Agent role (字符串名) */
+    agentRole?: string
+    /** v0.3.0: 步骤后的门禁检查 */
+    gates?: WorkflowGate[]
+    /** v0.3.0: 标记为可断点续跑步骤 */
+    resumable?: boolean
   }>
   /** 工作流完成后的通知/跳转动作（可选） */
   onComplete?: WorkflowCompleteAction
@@ -280,11 +319,35 @@ export const useWorkflowStore = create<WorkflowState>()((set, get) => ({
 
       try {
         const result = await stepDef.executor(run.steps[i], context, callbacks)
+        const stepResult = result || get().activeRuns.find(r => r.id === run.id)?.steps[i].result
+
+        // v0.3.0: 执行 gate 门禁检查
+        let gateResults: GateResult[] = []
+        if (stepDef.gates && stepDef.gates.length > 0 && stepResult) {
+          callbacks.log(`🔍 执行 ${stepDef.gates.length} 道门禁检查...`)
+          const { runStepGates, allGatesPassed } = await import('../services/workflows/gate-system')
+          gateResults = await runStepGates(stepResult, stepDef.gates, context)
+          // 记录门禁结果到 step
+          updateStepById(set, run.id, i, { gateResults })
+          // 输出门禁日志
+          for (const gr of gateResults) {
+            for (const issue of gr.issues) {
+              const icon = issue.severity === 'blocker' ? '🚫' : '⚠️'
+              callbacks.log(`  ${icon} [${gr.gateName}] ${issue.message}`)
+            }
+          }
+          const gateSummary = allGatesPassed(gateResults) ? '✅ 门禁全部通过' : '❌ 有门禁未通过（blocker）'
+          callbacks.log(gateSummary)
+          if (!allGatesPassed(gateResults)) {
+            throw new Error(`GATE_BLOCKED: ${gateResults.filter(r => !r.passed).map(r => r.gateName).join(', ')}`)
+          }
+        }
+
         updateStepById(set, run.id, i, {
           status: 'completed',
           completedAt: new Date().toISOString(),
           progress: 100,
-          result: result || get().activeRuns.find(r => r.id === run.id)?.steps[i].result,
+          result: stepResult,
         })
         get().addLog('info', `✅ [${definition.title}] 步骤完成: ${stepDef.name}`)
 
