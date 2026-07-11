@@ -14,13 +14,32 @@ import { ipc } from '../ipc-client'
 // ===== 文本处理通用工具 =====
 
 /**
- * 剥除文本中可能包含的 <think>...</think> 思维链标签
+ * 剥除文本中可能包含的 thinking 思维链标签
  * 用于清洗大模型在生成正文时输出的思维链，避免其被持久化写入磁盘文件
+ * v0.2.7: 兼容 ASCII 和 Unicode fullwidth；修复无闭合标签时吞正文的 bug
  */
 export function stripThinkingTags(text: string): string {
   if (!text) return text
-  // 支持只有 <think> 没有闭合标签的情况
-  return text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim()
+  let cleaned = text
+
+  // 同时匹配 ASCII 和 Unicode fullwidth think 标签
+  const thinkOpen = new RegExp('(?:<|\\uff1c)think(?:>|\\uff1e)', 'gi')
+  const thinkBlock = new RegExp('[\\s\\S]*?(?:<\\/|\\uff1c\\/)think(?:>|\\uff1e)', 'gi')
+
+  // 1. 删除完整 think 块
+  cleaned = cleaned.replace(thinkBlock, '')
+
+  // 2. 只有开始标签无闭合 → 找正文开头（第X章/空行后首个非空行）
+  const thinkStart = cleaned.search(thinkOpen)
+  if (thinkStart !== -1) {
+    const afterThink = cleaned.slice(thinkStart)
+    const bodyMatch = afterThink.match(/\n\s*\n\s*(?=\S)/)
+    if (bodyMatch && bodyMatch.index !== undefined) {
+      cleaned = afterThink.slice(bodyMatch.index + bodyMatch[0].length)
+    }
+  }
+
+  return cleaned.trim()
 }
 
 // ===== 通用重试包装器 =====

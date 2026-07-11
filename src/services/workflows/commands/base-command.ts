@@ -192,11 +192,34 @@ export abstract class BaseWorkflowCommand<TResult = string> {
   }
 
   /**
-   * 去除 DeepSeek 等模型的  thinking 标签，保证落盘纯净
-   */
-  protected stripThinkingTags(text: string): string {
-      const cleaned = text.replace(/<\/?think>/gi, '').trim()
-      return cleaned || text.trim()
+     * 去除 DeepSeek 等模型的 thinking 标签，保证落盘纯净
+     * v0.2.7: 兼容 ASCII <thinking> 和 Unicode fullwidth 〈thinking〉
+     * - 有闭合标签 → 删除整个块
+     * - 只有开始标签无闭合 → 找到正文开头截断
+     * - 皆无 → 原文通过
+     */
+    protected stripThinkingTags(text: string): string {
+      if (!text) return text
+      let cleaned = text
+
+      // 同时匹配 ASCII 和 Unicode fullwidth think 标签
+      const thinkOpen = new RegExp('(?:<|\\uff1c)think(?:>|\\uff1e)', 'gi')
+      const thinkBlock = new RegExp('[\\s\\S]*?(?:<\\/|\\uff1c\\/)think(?:>|\\uff1e)', 'gi')
+
+      // 1. 删除完整 think 块
+      cleaned = cleaned.replace(thinkBlock, '')
+
+      // 2. 只有开始标签无闭合 → 找正文开头截断
+      const thinkStart = cleaned.search(thinkOpen)
+      if (thinkStart !== -1) {
+        const afterThink = cleaned.slice(thinkStart)
+        const bodyMatch = afterThink.match(/\n\s*\n\s*(?=\S)/)
+        if (bodyMatch && bodyMatch.index !== undefined) {
+          cleaned = afterThink.slice(bodyMatch.index + bodyMatch[0].length)
+        }
+      }
+
+      return cleaned.trim()
     }
 
   /**
