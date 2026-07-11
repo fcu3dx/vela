@@ -696,6 +696,30 @@ function ContentTrackingView() {
 // ===== 对标视图 =====
 
 function BenchmarkView() {
+  const startWorkflow = useWorkflowStore(s => s.startWorkflow)
+  const activeRuns = useWorkflowStore(s => s.activeRuns)
+  const isRunning = activeRuns.length > 0
+
+  const handleMarketScan = () => {
+    import('../../services/workflows/benchmark-workflow').then(m => {
+      startWorkflow(m.createBenchmarkWorkflow({ mode: 'scan', agentRole: undefined }))
+    })
+  }
+
+  const handleBookAnalyze = () => {
+    import('../../services/workflows/benchmark-workflow').then(m => {
+      startWorkflow(m.createBenchmarkWorkflow({ mode: 'analyze', agentRole: undefined }))
+    })
+  }
+
+  const handleImport = () => {
+    import('../../services/workflows/benchmark-workflow').then(m => {
+      startWorkflow(m.createBenchmarkWorkflow({ mode: 'import', agentRole: undefined }))
+    })
+  }
+
+  const btnClass = "flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
+
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="text-xs text-[var(--color-text-secondary)]">
@@ -703,38 +727,71 @@ function BenchmarkView() {
 
         <div className="grid gap-2">
           <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ border: '1px solid var(--color-border)' }}>
-            <div className="flex items-center gap-2">
-              <BookOpen size={16} style={{ color: 'var(--color-accent)' }} />
-              <span className="text-sm font-medium text-[var(--color-text)]">对标书籍</span>
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen size={16} style={{ color: 'var(--color-accent)' }} />
+                <span className="text-sm font-medium text-[var(--color-text)]">📊 长篇拆文</span>
+              </div>
+              <button
+                className={btnClass}
+                style={{ background: 'var(--color-accent)', color: '#fff' }}
+                disabled={isRunning}
+                onClick={handleBookAnalyze}
+              >
+                {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                启动分析
+              </button>
             </div>
             <span className="text-[0.68rem] text-[var(--color-text-muted)]">
-              在「对标/」目录下，每本书一个子目录：角色/剧情/设定/文风/拆文报告
+              输入对标书名，AI 拆解角色/剧情/设定/文风，生成结构化拆文报告
             </span>
           </div>
 
           <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ border: '1px solid var(--color-border)' }}>
-            <div className="flex items-center gap-2">
-              <BookOpen size={16} style={{ color: 'var(--color-warning)' }} />
-              <span className="text-sm font-medium text-[var(--color-text)]">拆文库</span>
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <Zap size={16} style={{ color: 'var(--color-info)' }} />
+                <span className="text-sm font-medium text-[var(--color-text)]">🔍 市场扫榜</span>
+              </div>
+              <button
+                className={btnClass}
+                style={{ background: 'var(--color-info)', color: '#fff' }}
+                disabled={isRunning}
+                onClick={handleMarketScan}
+              >
+                {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                扫描热榜
+              </button>
             </div>
             <span className="text-[0.68rem] text-[var(--color-text-muted)]">
-              在「拆文库/」目录下，每书一个子目录：结构化拆解产物
+              扫描平台热榜，分析趋势题材、热门标签、风格方向
             </span>
           </div>
 
           <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ border: '1px solid var(--color-border)' }}>
-            <div className="flex items-center gap-2">
-              <Zap size={16} style={{ color: 'var(--color-info)' }} />
-              <span className="text-sm font-medium text-[var(--color-text)]">市场扫榜</span>
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen size={16} style={{ color: 'var(--color-warning)' }} />
+                <span className="text-sm font-medium text-[var(--color-text)]">📥 导入分析</span>
+              </div>
+              <button
+                className={btnClass}
+                style={{ background: 'var(--color-warning)', color: '#fff' }}
+                disabled={isRunning}
+                onClick={handleImport}
+              >
+                {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                导入拆解
+              </button>
             </div>
             <span className="text-[0.68rem] text-[var(--color-text-muted)]">
-              使用 AI 面板的 `novel-analyze` / `market-scan` Skill 启动分析
+              从文件导入已有小说全文，AI 逆向推演架构/角色/世界观
             </span>
           </div>
         </div>
 
         <p className="mt-4 text-[0.68rem] text-[var(--color-text-muted)]">
-          💡 在 AI 面板中切换到对应 Agent 后输入指令开始对标分析。
+          💡 对标分析结果保存到「对标/」目录，导入分析启动「逆向推演」工作流。
         </p>
       </div>
     </div>
