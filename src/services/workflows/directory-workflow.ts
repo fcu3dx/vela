@@ -149,9 +149,10 @@ export function createDirectoryWorkflow(params: DirectoryWorkflowParams = { mode
           context.data.architecture = parts.join('\n\n---\n\n')
           // 注入节奏指导到 context，供 Command 读取
           if (params.pacingGuidance) context.data.pacingGuidance = params.pacingGuidance
+          // v0.2.7: full 模式也加载已有蓝图，供断点续跑检测
+          const existing = await loadDirectoryBlueprints()
+          context.data.existingBlueprints = existing
           if (params.mode === 'append') {
-            const existing = await loadDirectoryBlueprints()
-            context.data.existingBlueprints = existing
             callbacks.log(`已加载 ${existing.length} 章已有蓝图`)
           }
           return `架构加载完成（${parts.length} 段）`
