@@ -53,17 +53,9 @@ export class GenerateDirectoryCommand extends BaseWorkflowCommand<ChapterBluepri
       callbacks.log(`  正在生成第 ${cursor}–${batchEnd} 章...`)
 
       let prompt: string
-      if (cursor === 1 && this.params.mode === 'full') {
-        const template = getPromptTemplate('chapter_blueprint')
-        if (!template) throw new Error('模板丢失')
-        prompt = new DirectoryPromptBuilder(template)
-          .withNovelArchitecture(architecture)
-          .withNumberOfChapters(endChapter)
-          .withGlobalGuidance(globalGuidance)
-          .withGenre(genre)
-          .withPacingGuidance((context.data.pacingGuidance as string) || '')
-          .build()
-      } else {
+      // v0.2.7 FIX: 统一使用 chapter_blueprint_chunk 模板，避免首批用不同模板
+      // 致 AI 输出格式不一致（首批返回 0 章，后续批正常）
+      {
         const template = getPromptTemplate('chapter_blueprint_chunk')
         if (!template) throw new Error('模板丢失')
 
@@ -72,7 +64,7 @@ export class GenerateDirectoryCommand extends BaseWorkflowCommand<ChapterBluepri
 
         prompt = new DirectoryPromptBuilder(template)
           .withNovelArchitecture(architecture)
-          .withChapterList(chapterList || '（首批生成）')
+          .withChapterList(chapterList || '（首批生成，无前序章节）')
           .withNumberOfChapters(totalChapters)
           .withN(cursor)
           .withM(batchEnd)
@@ -90,7 +82,7 @@ export class GenerateDirectoryCommand extends BaseWorkflowCommand<ChapterBluepri
 
       // ★ 关键修复：接受 AI 返回的从 cursor 到 endChapter 范围内的所有有效章节
       // AI 可能一次性返回超出本批次（batchEnd）的章节，全部保留，避免浪费和重复 LLM 请求
-      const parsed = parseTextBlueprints(resultText, cursor, endChapter)
+      const parsed = parseTextBlueprints(resultText, cursor, batchEnd)
       newBlueprints.push(...parsed)
 
       // ==== 批次入库 ====

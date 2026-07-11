@@ -40,12 +40,23 @@ export function parseTextBlueprints(content: string, startNum: number, endNum: n
 
   try {
     const cleanContent = stripThinkingTags(content)
-    const jsonStr = cleanContent.replace(/```json?\n?/g, '').replace(/```\n?/g, '').trim()
+    let jsonStr = cleanContent.replace(/```[a-z]*\n?/gi, '').replace(/```\n?/g, '').trim()
     const startIndex = jsonStr.indexOf('{')
     const endIndex = jsonStr.lastIndexOf('}')
 
     if (startIndex !== -1 && endIndex !== -1) {
-      const arrayStr = jsonStr.substring(startIndex, endIndex + 1)
+      let arrayStr = jsonStr.substring(startIndex, endIndex + 1)
+
+      // v0.2.7 FIX: AI 可能在 JSON 字符串值内嵌入未转义的 ASCII 双引号
+      // 如 "keyEvents": "...得到了"金手指"..."，导致 JSON.parse 失败。
+      // 将中文语境下的裸双引号（两侧是汉字或中文标点）替换为「」。
+      // 覆盖：汉字、CJK 扩展、中文标点、全角字符
+      const cjkAndPunct = '\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3000-\u303f\uff00-\uffef'
+      arrayStr = arrayStr.replace(
+        new RegExp(`([${cjkAndPunct}])\\x22([^\\x22]{1,50})\\x22([${cjkAndPunct}])`, 'g'),
+        '$1「$2」$3'
+      )
+
       let parsed = JSON.parse(arrayStr)
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.blueprints) {
         parsed = parsed.blueprints
