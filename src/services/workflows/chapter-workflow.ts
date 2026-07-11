@@ -130,6 +130,10 @@ export function createChapterWorkflow(chapterInfo: ChapterInfo): WorkflowDefinit
       {
         name: '写稿',
         description: '基于架构 + 蓝图 + 上下文生成草稿',
+        agentRole: chapterInfo.agentRole || 'narrative-writer',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (step, context, callbacks) => {
           const { GenerateDraftCommand } = await import('./commands/generate-draft.command')
           const cmd = new GenerateDraftCommand(chapterInfo)
@@ -244,6 +248,10 @@ export function createFinalizeWorkflow(params: FinalizeOnlyParams): WorkflowDefi
       {
         name: '定稿',
         description: '写入 manuscript/，开启后处理 Command 更新三路大纲',
+        agentRole: params.agentRole || 'chronicler',
+        gates: [
+          { name: 'format', type: 'format', severity: 'blocker' },
+        ],
         executor: async (step, context, callbacks) => {
           const { FinalizeChapterCommand } = await import('./commands/finalize-chapter.command')
           const cmd = new FinalizeChapterCommand({

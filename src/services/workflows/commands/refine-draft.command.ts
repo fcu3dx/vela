@@ -49,7 +49,7 @@ export class RefineDraftCommand extends BaseWorkflowCommand<string> {
       .withUserRefinePrompt(userPromptBlock)
 
     const refined = await this.callLLMWithBuilder(promptBuilder, callbacks, { thinking: false }, context)
-    const cleanRefined = this.stripThinkingTags(refined)
+    const cleanRefined = this.compactEmptyLines(this.stripThinkingTags(refined))
 
     const { parseDraftMeta } = await import('../chapter-workflow')
     const baseDraft = await parseDraftMeta(this.params.draftPath)

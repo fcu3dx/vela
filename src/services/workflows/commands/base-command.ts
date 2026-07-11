@@ -222,6 +222,16 @@ export abstract class BaseWorkflowCommand<TResult = string> {
       return cleaned.trim()
     }
 
+    /**
+     * v0.3.0: 压缩连续空行 — 3+个连续空白行压缩为单个空行
+     * 修稿后 LLM 常在正文前后输出大量空行，影响阅读体验
+     */
+    protected compactEmptyLines(text: string): string {
+      if (!text) return text
+      // 连续 3+ 个空行 → 压缩为 2 个空行（保留段落间隔）
+      return text.replace(/\n{4,}/g, '\n\n\n').trim()
+    }
+
   /**
    * 全局容错 JSON 解析器
    * 自动剥离 Markdown ```json 代码块并处理尾随逗号等常见大模型幻觉
