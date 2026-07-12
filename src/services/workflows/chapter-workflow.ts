@@ -186,6 +186,7 @@ export function createRefineFromReviewWorkflow(params: RefineFromReviewParams): 
       {
         name: '审稿驱动修稿',
         description: '根据审稿报告精准修复问题调用 Command',
+        agentRole: params.agentRole || 'refinement-editor',
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
         ],

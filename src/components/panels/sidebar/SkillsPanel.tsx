@@ -19,47 +19,63 @@ interface SkillCategory {
 }
 
 const CATEGORIES: SkillCategory[] = [
-  { key: 'core',     label: 'P0 核心',    emoji: '⭐' },
-  { key: 'advanced', label: 'P1 进阶',    emoji: '🔧' },
-  { key: 'classic',  label: '经典工具',   emoji: '📦' },
-  { key: 'utility',  label: '基础工具',   emoji: '🛠️' },
+  { key: 'architecture', label: '🏗️ 架构/大纲', emoji: '🏗️' },
+  { key: 'writing',      label: '✍️ 写稿',      emoji: '✍️' },
+  { key: 'refinement',   label: '🔧 修稿',      emoji: '🔧' },
+  { key: 'review',       label: '🔍 审稿',      emoji: '🔍' },
+  { key: 'benchmark',    label: '📊 拆文/扫榜', emoji: '📊' },
+  { key: 'character',    label: '👤 角色',      emoji: '👤' },
+  { key: 'utility',      label: '🛠️ 工具',      emoji: '🛠️' },
 ]
 
 /** 将 Skill 名映射到分类 */
+/** 按功能分类（v0.3.0 重构：功能分类替代优先级分类） */
 function classifySkill(skill: LoadedSkill): string {
   const name = skill.metadata.name
-  // P0 核心 11
-  const core = [
-    'novel-outline', 'novel-draft', 'novel-analyze', 'deai-filter',
-    'multi-review', 'character-sim', 'reader-sim', 'style-creator',
-    'writing-modes', 'writing-principles', 'story-memory',
+  // 🏗️ 架构/大纲
+  const architecture = [
+    'novel-outline', 'brainstorm', 'story-memory', 'novel-import',
   ]
-  // P1 进阶 7
-  const advanced = [
-    'market-scan', 'novel-import', 'cover-gen', 'llm-discipline',
-    'short-write', 'short-analyze', 'research-assist',
+  // ✍️ 写稿
+  const writing = [
+    'novel-draft', 'short-write', 'writing-modes', 'writing-principles',
+    'writing-coach', 'llm-discipline',
   ]
-  // 经典工具 5
-  const classic = [
-    'review-chapter', 'brainstorm', 'character-analysis',
-    'continuity-check', 'writing-coach',
+  // 🔧 修稿
+  const refinement = [
+    'deai-filter', 'style-creator',
   ]
-  // 基础工具 2
-  const utility = [
-    'project-init', 'writing-toolbox',
+  // 🔍 审稿
+  const review = [
+    'review-chapter', 'multi-review', 'continuity-check', 'reader-sim',
+  ]
+  // 📊 拆文/扫榜
+  const benchmark = [
+    'novel-analyze', 'short-analyze', 'market-scan',
+  ]
+  // 👤 角色
+  const character = [
+    'character-analysis', 'character-sim',
+  ]
+  // 🛠️ 工具
+  const _utility = [
+    'cover-gen', 'research-assist', 'project-init', 'writing-toolbox',
   ]
 
-  if (core.includes(name)) return 'core'
-  if (advanced.includes(name)) return 'advanced'
-  if (classic.includes(name)) return 'classic'
-  if (utility.includes(name)) return 'utility'
+  if (architecture.includes(name)) return 'architecture'
+  if (writing.includes(name)) return 'writing'
+  if (refinement.includes(name)) return 'refinement'
+  if (review.includes(name)) return 'review'
+  if (benchmark.includes(name)) return 'benchmark'
+  if (character.includes(name)) return 'character'
+  if (_utility.includes(name)) return 'utility'
   return 'utility'
 }
 
 export default function SkillsPanel() {
   const [skills, setSkills] = useState<LoadedSkill[]>([])
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['core', 'advanced'])
+    new Set(['architecture', 'writing', 'refinement', 'review'])
   )
   const [activatedSkill, setActivatedSkill] = useState<string | null>(null)
 

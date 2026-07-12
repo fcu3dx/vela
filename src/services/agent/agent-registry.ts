@@ -125,7 +125,7 @@ function registerBuiltinAgents(registry: AgentRegistryImpl): void {
 - 细纲每章一个文件(大纲/细纲_第XXX章.md)
 - 默认分批建纲: 前10章->每写5章滚动补齐`,
       triggerKeywords: ['大纲', '架构', '结构', '题材', '定位', '故事框架', '卷纲', '细纲'],
-      recommendedSkills: ['novel-outline', 'brainstorm'],
+      recommendedSkills: ['novel-outline', 'brainstorm', 'story-memory', 'novel-analyze'],
     },
     {
       role: 'character-designer',
@@ -183,7 +183,7 @@ function registerBuiltinAgents(registry: AgentRegistryImpl): void {
 ## 字数控制
 严格遵循细纲中设定的字数目标, 不欠字不回炉`,
       triggerKeywords: ['写', '续写', '日更', '正文', '章节', '生成', '写稿', '写作'],
-      recommendedSkills: ['novel-draft', 'writing-modes'],
+      recommendedSkills: ['novel-draft', 'writing-modes', 'writing-principles', 'llm-discipline'],
     },
     {
       role: 'consistency-checker',
@@ -353,7 +353,7 @@ function registerBuiltinAgents(registry: AgentRegistryImpl): void {
 - 五段式内容概括(起因->发展->转折->高潮->结尾)
 - 多线情节安排(主线/辅线/事件线/感情线/逻辑线)`,
       triggerKeywords: ['大纲', '细纲', '节拍', '章节划分', '搭框架'],
-      recommendedSkills: ['novel-outline'],
+      recommendedSkills: ['novel-outline', 'brainstorm', 'story-memory'],
     },
     {
       role: 'style-creator',
@@ -389,16 +389,19 @@ function registerBuiltinAgents(registry: AgentRegistryImpl): void {
       systemPrompt: `你是"蓝图师"-- Vela 的章节蓝图生成专家。
 
 ## 核心职责
-- 基于项目架构（故事前提/角色图谱/世界观/情节大纲）生成全书章节蓝图
-- 确保每章有明确的核心事件、情绪目标和钩子
-- 章节之间承接关系清晰，检查前后矛盾
-- 支持断点续跑，跳过已入库章节
+- 基于项目架构（前提/世界观/角色图谱/情节大纲）生成章节蓝图
+- 每章蓝图包含：标题、场景描述、剧情要点、字数目标
+- 确保章节间递进关系和节奏控制
+- 蓝图是写手生成正文的唯一依据
 
-## 输出格式
-- 严格遵循 ChapterBlueprint JSON Schema
-- 每章包含：chapterNumber, title, plotSummary, keyEvents, emotionalArc, wordCount, purpose`,
-      triggerKeywords: ['生成蓝图', '章节规划', '目录生成'],
-      recommendedSkills: ['story-architect'],
+## 生成规则
+1. 读取所有架构文件（前提/世界观/角色图谱/情节大纲）
+2. 按大纲分配章节内容
+3. 每章确保有钩子+冲突+情绪递进
+4. 章节长度均匀分配（避免过长或过短）
+5. 续跑时自动检测已有章节，跳过重复生成`,
+      triggerKeywords: ['蓝图', '目录', '章节规划', '生成蓝图', '章节目录'],
+      recommendedSkills: ['novel-outline', 'story-memory'],
     },
     {
       role: 'refinement-editor',
