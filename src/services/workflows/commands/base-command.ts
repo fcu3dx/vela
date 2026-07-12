@@ -2,6 +2,7 @@ import type { WorkflowContext, StepCallbacks } from '../../../stores/workflow-st
 import { useLLMStore } from '../../../stores/llm-store'
 import { globalEventBus, EventPayloadMap } from '../../../shared/event-bus'
 import type { BasePromptBuilder } from '../../prompts/prompt-builder'
+import { agentRegistry } from '../../agent/agent-registry'
 
 export interface CommandExecuteParams {
   step: unknown
@@ -263,5 +264,11 @@ export abstract class BaseWorkflowCommand<TResult = string> {
    */
   protected notifyRefresh(resources: EventPayloadMap['REFRESH_RESOURCE']['resources']) {
     globalEventBus.emit('REFRESH_RESOURCE', { resources })
+  }
+
+  /** v0.3.0: 根据 agentRole 获取 Agent 系统提示词 */
+  protected getAgentSystemPrompt(agentRole: string): string {
+    const profile = agentRegistry.get(agentRole as any)
+    return profile?.systemPrompt ?? ''
   }
 }

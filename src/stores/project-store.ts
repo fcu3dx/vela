@@ -83,6 +83,7 @@ interface ProjectState {
   closeProject: () => void
   /** 更新角色状态（内存 + 持久化） */
   updateCharacterStates: (states: string) => Promise<void>
+  removeRecentProject: (projectPath: string) => Promise<void>
 }
 
 export const useProjectStore = create<ProjectState>()((set, get) => ({
@@ -194,6 +195,12 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   loadRecentProjects: async () => {
+    const list = await ipc.invoke('project:recent-list')
+    set({ recentProjects: list })
+  },
+
+  removeRecentProject: async (projectPath: string) => {
+    await ipc.invoke('project:recent-remove', projectPath)
     const list = await ipc.invoke('project:recent-list')
     set({ recentProjects: list })
   },

@@ -8,7 +8,6 @@ import {
   Clock,
   X,
   Home,
-  ChevronRight,
   GitBranch,
   Workflow,
   MessageSquareText,
@@ -44,6 +43,7 @@ export default function ActivityBar() {
   const currentProject = useProjectStore(s => s.currentProject)
   const recentProjects = useProjectStore(s => s.recentProjects)
   const loadRecentProjects = useProjectStore(s => s.loadRecentProjects)
+  const removeRecentProject = useProjectStore(s => s.removeRecentProject)
   const closeProject = useProjectStore(s => s.closeProject)
   const [showProjectMenu, setShowProjectMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -231,22 +231,35 @@ export default function ActivityBar() {
                       .filter(p => p.path !== currentProject?.path)
                       .slice(0, 8)
                       .map((p, i) => (
-                        <button
+                        <div
                           key={i}
-                          onClick={() => handleOpenRecent(p.path)}
                           className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors hover:bg-[var(--color-hover)] group"
                         >
-                          <BookOpen size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm truncate" style={{ color: 'var(--color-text)' }}>
-                              {p.name}
-                            </p>
-                            <p className="text-[0.7rem] truncate" style={{ color: 'var(--color-text-muted)' }}>
-                              {p.path}
-                            </p>
-                          </div>
-                          <ChevronRight size={11} className="opacity-0 group-hover:opacity-50 flex-shrink-0" />
-                        </button>
+                          <button
+                            onClick={() => handleOpenRecent(p.path)}
+                            className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                          >
+                            <BookOpen size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate" style={{ color: 'var(--color-text)' }}>
+                                {p.name}
+                              </p>
+                              <p className="text-[0.7rem] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                                {p.path}
+                              </p>
+                            </div>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeRecentProject(p.path)
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10"
+                            title="从最近项目中移除"
+                          >
+                            <X size={11} style={{ color: 'var(--color-text-muted)' }} />
+                          </button>
+                        </div>
                       ))}
                     {recentProjects.filter(p => p.path !== currentProject?.path).length === 0 && (
                       <p className="text-xs px-2 py-1.5 opacity-50" style={{ color: 'var(--color-text-muted)' }}>

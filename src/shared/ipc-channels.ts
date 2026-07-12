@@ -56,6 +56,10 @@ export interface ProjectChannels {
     args: []
     return: Array<{ name: string; path: string; updatedAt: string }>
   }
+  'project:recent-remove': {
+    args: [projectPath: string]
+    return: { success: boolean }
+  }
   'dialog:select-folder': {
     args: []
     return: string | null

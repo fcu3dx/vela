@@ -26,6 +26,12 @@ function addRecentProject(project: RecentProject) {
   writeJsonFile(RECENT_PROJECTS_PATH, trimmed)
 }
 
+function removeRecentProject(projectPath: string) {
+  const list = loadRecentProjects()
+  const filtered = list.filter((p) => p.path !== projectPath)
+  writeJsonFile(RECENT_PROJECTS_PATH, filtered)
+}
+
 export function registerProjectController() {
   // 创建新项目
   ipcMain.handle('project:create', async (_event, config: {
@@ -240,6 +246,11 @@ export function registerProjectController() {
 
   ipcMain.handle('project:recent-list', async () => {
     return loadRecentProjects()
+  })
+
+  ipcMain.handle('project:recent-remove', async (_event, projectPath: string) => {
+    removeRecentProject(projectPath)
+    return { success: true }
   })
 
   ipcMain.handle('dialog:select-folder', async () => {

@@ -29,7 +29,10 @@ const FIELD_LABELS: Record<GeneratableField, string> = {
  * 根据已有的 NovelConfig 上下文，只生成指定字段的内容
  */
 export class GenerateFieldCommand extends BaseWorkflowCommand<string> {
-  constructor(private fieldKey: GeneratableField) {
+  constructor(
+    private fieldKey: GeneratableField,
+    private agentRole?: string,
+  ) {
     super()
   }
 
@@ -46,7 +49,11 @@ export class GenerateFieldCommand extends BaseWorkflowCommand<string> {
     const context = this.buildContext(config)
     // 构建针对性 prompt
     const prompt = this.buildPrompt(config, context)
-    const systemPrompt = '你是一位入行十年的顶尖网文主编与白金大神作家，擅长精准设计小说的各项核心配置。'
+
+    // v0.3.0: 支持指定 Agent
+    const systemPrompt = this.agentRole
+      ? this.getAgentSystemPrompt(this.agentRole)
+      : '你是一位入行十年的顶尖网文主编与白金大神作家，擅长精准设计小说的各项核心配置。'
 
     const result = await this.callLLM(prompt, systemPrompt, callbacks)
     const cleanResult = this.stripThinkingTags(result).trim()

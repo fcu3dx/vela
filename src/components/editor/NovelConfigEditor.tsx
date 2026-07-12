@@ -31,6 +31,12 @@ export default function NovelConfigEditor() {
   // 各区块的独立生成状态
   const [generatingField, setGeneratingField] = useState<GeneratableField | null>(null)
 
+  // v0.3.0: 每字段 Agent 选择
+  const [fieldAgents, setFieldAgents] = useState<Record<string, string>>({})
+  const setFieldAgent = (field: string, agent: string) => {
+    setFieldAgents(prev => ({ ...prev, [field]: agent }))
+  }
+
   // 直接从 Store 读取配置 — 单一数据源，无需 local state 镜像
   const config = currentProject?.novelConfig ?? null
 
@@ -86,7 +92,7 @@ export default function NovelConfigEditor() {
     setGeneratingField(fieldKey)
     try {
       const { GenerateFieldCommand } = await import('../../services/workflows/commands/generate-field.command')
-      const cmd = new GenerateFieldCommand(fieldKey)
+      const cmd = new GenerateFieldCommand(fieldKey, fieldAgents[fieldKey] || undefined)
       await cmd.execute({
         step: { id: '', commandId: '', name: '', params: {} },
         context: { data: {}, cancelled: false },
@@ -103,7 +109,51 @@ export default function NovelConfigEditor() {
     }
   }
 
-  const genres = ['玄幻', '仙侠', '都市', '科幻', '历史', '军事', '游戏', '末世', '悬疑', '灵异', '言情', '古言', '现言', '奇幻', '武侠', '轻小说', '同人', '职场']
+/** v0.3.0: 每字段可选 Agent 列表 */
+const FIELD_AGENT_OPTIONS: Record<GeneratableField, Array<{ value: string; label: string }>> = {
+  coreOutline: [
+    { value: '', label: '默认（Vela 自带）' },
+    { value: 'general', label: '通用助手' },
+    { value: 'story-architect', label: '故事架构师' },
+    { value: 'brainstormer', label: '脑暴者' },
+    { value: 'outliner', label: '大纲师' },
+  ],
+  worldSetting: [
+    { value: '', label: '默认（Vela 自带）' },
+    { value: 'general', label: '通用助手' },
+    { value: 'story-architect', label: '故事架构师' },
+    { value: 'brainstormer', label: '脑暴者' },
+    { value: 'outliner', label: '大纲师' },
+  ],
+  goldenFinger: [
+    { value: '', label: '默认（Vela 自带）' },
+    { value: 'general', label: '通用助手' },
+    { value: 'story-architect', label: '故事架构师' },
+    { value: 'brainstormer', label: '脑暴者' },
+    { value: 'outliner', label: '大纲师' },
+  ],
+  protagonistProfile: [
+    { value: '', label: '默认（Vela 自带）' },
+    { value: 'general', label: '通用助手' },
+    { value: 'character-designer', label: '角色设计师' },
+    { value: 'character-sim', label: '角色模拟器' },
+  ],
+  globalGuidance: [
+    { value: '', label: '默认（Vela 自带）' },
+    { value: 'general', label: '通用助手' },
+    { value: 'character-designer', label: '角色设计师' },
+    { value: 'character-sim', label: '角色模拟器' },
+    { value: 'brainstormer', label: '脑暴者' },
+    { value: 'outliner', label: '大纲师' },
+  ],
+  writingStyle: [
+    { value: '', label: '默认（Vela 自带）' },
+    { value: 'general', label: '通用助手' },
+    { value: 'style-creator', label: '风格创建器' },
+  ],
+}
+
+const genres = ['玄幻', '仙侠', '都市', '科幻', '历史', '军事', '游戏', '末世', '悬疑', '灵异', '言情', '古言', '现言', '奇幻', '武侠', '轻小说', '同人', '职场']
 
   return (
     <div className="h-full overflow-y-auto">
@@ -217,6 +267,9 @@ export default function NovelConfigEditor() {
             aiFieldKey="coreOutline"
             generatingField={generatingField}
             onAIGenerate={handleFieldGenerate}
+            selectedAgent={fieldAgents['coreOutline'] ?? ''}
+            agentOptions={FIELD_AGENT_OPTIONS.coreOutline}
+            onAgentChange={(a) => setFieldAgent('coreOutline', a)}
           >
             <Textarea value={config.coreOutline} onChange={(e) => update('coreOutline', e.target.value)} placeholder="在此输入你的创作想法，或让 AI 根据这段话一键生成全部配置..." rows={4} />
           </Section>
@@ -228,6 +281,9 @@ export default function NovelConfigEditor() {
             aiFieldKey="worldSetting"
             generatingField={generatingField}
             onAIGenerate={handleFieldGenerate}
+            selectedAgent={fieldAgents['worldSetting'] ?? ''}
+            agentOptions={FIELD_AGENT_OPTIONS.worldSetting}
+            onAgentChange={(a) => setFieldAgent('worldSetting', a)}
           >
             <Textarea value={config.worldSetting} onChange={(e) => update('worldSetting', e.target.value)} placeholder="描述故事发生的背景、时代、力量体系、社会结构（可简写，AI 生成架构时会自动丰富）..." rows={4} />
           </Section>
@@ -239,6 +295,9 @@ export default function NovelConfigEditor() {
             aiFieldKey="goldenFinger"
             generatingField={generatingField}
             onAIGenerate={handleFieldGenerate}
+            selectedAgent={fieldAgents['goldenFinger'] ?? ''}
+            agentOptions={FIELD_AGENT_OPTIONS.goldenFinger}
+            onAgentChange={(a) => setFieldAgent('goldenFinger', a)}
           >
             <Textarea value={config.goldenFinger} onChange={(e) => update('goldenFinger', e.target.value)} placeholder="主角的独特优势或故事核心卖点（可简写，架构生成时AI会深度扩展）..." rows={3} />
           </Section>
@@ -250,6 +309,9 @@ export default function NovelConfigEditor() {
             aiFieldKey="protagonistProfile"
             generatingField={generatingField}
             onAIGenerate={handleFieldGenerate}
+            selectedAgent={fieldAgents['protagonistProfile'] ?? ''}
+            agentOptions={FIELD_AGENT_OPTIONS.protagonistProfile}
+            onAgentChange={(a) => setFieldAgent('protagonistProfile', a)}
           >
             <Textarea value={config.protagonistProfile} onChange={(e) => update('protagonistProfile', e.target.value)} placeholder="主角的性格特征、背景故事、核心目标..." rows={4} />
           </Section>
@@ -261,6 +323,9 @@ export default function NovelConfigEditor() {
             aiFieldKey="globalGuidance"
             generatingField={generatingField}
             onAIGenerate={handleFieldGenerate}
+            selectedAgent={fieldAgents['globalGuidance'] ?? ''}
+            agentOptions={FIELD_AGENT_OPTIONS.globalGuidance}
+            onAgentChange={(a) => setFieldAgent('globalGuidance', a)}
           >
             <Textarea
               value={config.globalGuidance}
@@ -277,6 +342,9 @@ export default function NovelConfigEditor() {
             aiFieldKey="writingStyle"
             generatingField={generatingField}
             onAIGenerate={handleFieldGenerate}
+            selectedAgent={fieldAgents['writingStyle'] ?? ''}
+            agentOptions={FIELD_AGENT_OPTIONS.writingStyle}
+            onAgentChange={(a) => setFieldAgent('writingStyle', a)}
           >
             <Textarea
               value={config.writingStyle || ''}
@@ -321,20 +389,27 @@ function Section({
   aiFieldKey,
   generatingField,
   onAIGenerate,
+  selectedAgent,
+  agentOptions,
+  onAgentChange,
 }: {
   title: string
   desc?: string
   children: React.ReactNode
-  /** 对应 NovelConfig 中的字段 key，传入则显示 AI 生成按钮 */
   aiFieldKey?: GeneratableField
-  /** 当前正在生成的字段（全局共享状态，防止并发） */
   generatingField?: GeneratableField | null
-  /** AI 生成回调 */
   onAIGenerate?: (fieldKey: GeneratableField) => void
+  /** v0.3.0: 当前选择的 Agent */
+  selectedAgent?: string
+  /** v0.3.0: 可选的 Agent 列表 */
+  agentOptions?: Array<{ value: string; label: string }>
+  /** v0.3.0: Agent 选择回调 */
+  onAgentChange?: (agent: string) => void
 }) {
   const isGenerating = aiFieldKey != null && generatingField === aiFieldKey
   const isAnyGenerating = generatingField != null
   const showAIButton = aiFieldKey != null && onAIGenerate != null
+  const showAgentSelector = agentOptions != null && onAgentChange != null
 
   return (
     <div className="p-4 rounded-xl bg-[var(--color-sidebar)] border border-[var(--color-border)]">
@@ -343,22 +418,37 @@ function Section({
           <h3 className="text-sm font-semibold text-[var(--color-text)]">{title}</h3>
           {desc && <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>}
         </div>
-        {showAIButton && (
-          <Button
-            variant="ai"
-            size="sm"
-            onClick={() => onAIGenerate(aiFieldKey)}
-            disabled={isAnyGenerating}
-            className="flex-shrink-0 ml-3"
-            title={isGenerating ? '正在生成...' : `AI 生成「${title}」`}
-          >
-            {isGenerating
-              ? <Loader2 size={11} className="animate-spin" />
-              : <Sparkles size={11} />
-            }
-            {isGenerating ? '生成中...' : 'AI 生成'}
-          </Button>
-        )}
+        <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
+          {showAgentSelector && (
+            <select
+              value={selectedAgent ?? ''}
+              onChange={(e) => onAgentChange(e.target.value)}
+              className="text-[0.65rem] bg-transparent border border-[--border-soft] rounded px-1.5 py-0.5"
+              style={{ color: 'var(--color-text)', maxWidth: 100 }}
+              title="选择 AI 专家"
+            >
+              {agentOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          )}
+          {showAIButton && (
+            <Button
+              variant="ai"
+              size="sm"
+              onClick={() => onAIGenerate(aiFieldKey)}
+              disabled={isAnyGenerating}
+              className="flex-shrink-0"
+              title={isGenerating ? '正在生成...' : `AI 生成「${title}」`}
+            >
+              {isGenerating
+                ? <Loader2 size={11} className="animate-spin" />
+                : <Sparkles size={11} />
+              }
+              {isGenerating ? '生成中...' : 'AI 生成'}
+            </Button>
+          )}
+        </div>
       </div>
       {children}
     </div>

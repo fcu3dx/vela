@@ -27,8 +27,9 @@ export interface DirectoryWorkflowParams {
   mode: 'full' | 'append'
   startChapter?: number
   count?: number
-  /** 节奏/风格指导（可选） */
   pacingGuidance?: string
+  /** v0.3.0: Agent 选择 */
+  agentRole?: string
 }
 
 // ==========================================
@@ -162,7 +163,7 @@ export function createDirectoryWorkflow(params: DirectoryWorkflowParams = { mode
         name: '生成蓝图',
         description: '基于架构文件生成全书章节蓝图',
         resumable: true,
-        agentRole: 'blueprint-agent',
+        agentRole: params.agentRole || 'blueprint-agent',
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
           {
