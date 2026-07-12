@@ -398,7 +398,7 @@ export default function DraftEditor({ filePath, content }: Props) {
               </Button>
             )}
 
-            {/* v0.2.3: Agent 选择器 */}
+            {/* v0.2.3: Agent 选择器 — 留空则弹窗内选 */}
             <select
               value={selectedAgent}
               onChange={(e) => setSelectedAgent(e.target.value as AgentRole | '')}
@@ -598,13 +598,24 @@ export default function DraftEditor({ filePath, content }: Props) {
               className="w-full text-sm bg-[var(--color-bg)] border border-[var(--color-border)] rounded-md px-3 py-1.5"
               style={{ color: 'var(--color-text)' }}
             >
-              <option value="">默认助手</option>
-              {agentRegistry.listAll().map((a) => (
-                <option key={a.role} value={a.role}>
-                  {a.emoji} {a.displayName} — {a.description?.slice(0, 50)}
-                  {a.description && a.description.length > 50 ? '...' : ''}
-                </option>
-              ))}
+              <option value="">默认（Vela 自带）</option>
+              {confirmAction === 'review' ? (
+                <>
+                  <option value="general">{agentRegistry.get('general')?.displayName ?? '通用助手'}</option>
+                  <option value="consistency-checker">🔍 一致性检查器</option>
+                  <option value="critic">🎯 评论者</option>
+                  <option value="reader-sim">📖 读者模拟器</option>
+                  <option value="character-sim">🎭 角色模拟器</option>
+                  <option value="quality-gate">🚧 质量门卫</option>
+                </>
+              ) : confirmAction === 'refine' ? (
+                <>
+                  <option value="general">{agentRegistry.get('general')?.displayName ?? '通用助手'}</option>
+                  <option value="narrative-writer">✍️ 叙事写手</option>
+                  <option value="brainstormer">💡 脑暴者</option>
+                  <option value="refinement-editor">✍️ 精修师</option>
+                </>
+              ) : null}
             </select>
           </div>
 

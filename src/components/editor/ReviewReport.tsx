@@ -187,6 +187,8 @@ export default function ReviewReport({ reportText, draftPath, chapterNumber, cha
   const [userRefinePrompt, setUserRefinePrompt] = useState('')
   const [processing, setProcessing] = useState(false)
   const [showLegend, setShowLegend] = useState(false)
+  // v0.3.0: 审稿后修稿本地 Agent 选择
+  const [refineAgentRole, setRefineAgentRole] = useState<string>('')
 
   // 按分类分组
   const categories = new Map<string, ReviewIssue[]>()
@@ -238,7 +240,7 @@ export default function ReviewReport({ reportText, draftPath, chapterNumber, cha
         reviewReport: reportText,
         reviewFileName,
         userRefinePrompt: userRefinePrompt.trim() || undefined,
-        agentRole: agentRoleProp || undefined,
+        agentRole: refineAgentRole || agentRoleProp || undefined,
       }), false)
     } finally {
       setProcessing(false)
@@ -452,6 +454,24 @@ export default function ReviewReport({ reportText, draftPath, chapterNumber, cha
               value={userRefinePrompt}
               onChange={e => setUserRefinePrompt(e.target.value)}
             />
+          </div>
+          {/* v0.3.0: 审稿后修稿 Agent 选择器 */}
+          <div className="px-5 pb-3">
+            <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+              选择专家 Agent（可选）：
+            </label>
+            <select
+              value={refineAgentRole}
+              onChange={(e) => setRefineAgentRole(e.target.value)}
+              className="w-full text-sm bg-[var(--color-bg)] border border-[var(--color-border)] rounded-md px-3 py-1.5"
+              style={{ color: 'var(--color-text)' }}
+            >
+              <option value="">默认（Vela 自带）</option>
+              <option value="general">通用助手</option>
+              <option value="narrative-writer">✍️ 叙事写手</option>
+              <option value="brainstormer">💡 脑暴者</option>
+              <option value="refinement-editor">✍️ 精修师</option>
+            </select>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowRefineDialog(false)}>取消</Button>

@@ -319,12 +319,10 @@ export default function ChapterCreationDialog({ isOpen, onClose, prefill }: Prop
                   <span className="text-[0.7rem] opacity-50 font-normal">（可选，不选则使用默认助手）</span>
                 </Label>
                 <NativeSelect value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value as AgentRole | '')}>
-                  <option value="">默认助手（通用型）</option>
-                  {agentRegistry.listAll().map((agent) => (
-                    <option key={agent.role} value={agent.role}>
-                      {agent.emoji} {agent.displayName} — {agent.description?.slice(0, 60)}{agent.description && agent.description.length > 60 ? '...' : ''}
-                    </option>
-                  ))}
+                  <option value="">默认（Vela 自带）</option>
+                  <option value="general">通用助手</option>
+                  <option value="narrative-writer">✍️ 叙事写手</option>
+                  <option value="brainstormer">💡 脑暴者</option>
                 </NativeSelect>
               </div>
 
