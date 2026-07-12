@@ -2,6 +2,7 @@ import type { WorkflowDefinition } from '../../stores/workflow-store'
 import type { DraftMeta } from '../draft-index'
 
 import type { DraftStatus } from '../../shared/draft-status'
+import { stripThinkingTags } from './workflow-utils'
 
 // ==========================================
 // 1. 结构与类型导出 (保留对外的向后兼容)
@@ -246,10 +247,64 @@ export function createFinalizeWorkflow(params: FinalizeOnlyParams): WorkflowDefi
     type: 'chapter_creation',
     title: `✅ 定稿 — 第${params.chapterNumber}章 ${params.chapterTitle}`,
     steps: [
+      // v0.3.0: 定稿前 — 番茄小说平台内容安全审核
+      {
+        name: '平台合规审核',
+        description: '番茄小说内容安全避规检查，未通过则阻断定稿',
+        gates: [
+          { name: 'tomato_compliance', type: 'custom', severity: 'blocker' },
+        ],
+        executor: async (_step, context, callbacks) => {
+          callbacks.log('🔍 执行番茄小说平台内容安全审核...')
+
+          const tomatoRules = [
+            '1. 涉政: 不得涉及中国政治人物/事件/敏感历史',
+            '2. 色情: 脖子以下亲密行为禁止细节描写',
+            '3. 暴力: 禁止断肢/内脏/虐杀等过度血腥描写',
+            '4. 宗教: 不得贬损或歪曲任何宗教',
+            '5. 未成年: 禁止未成年人恋爱/亲密描写',
+            '6. 擦边: 禁止暗示性描写',
+            '7. 医疗/法律: 涉及现实医学/法律细节需标注纯属虚构',
+            '8. 广告: 禁止软广/硬广/引流',
+          ].join('\\n')
+
+          const draftText = params.draftContent.slice(0, 8000)
+          const auditPrompt = [
+            '请逐项检查以下小说章节内容，判断是否触犯番茄小说平台规则。',
+            '',
+            '审核规则:',
+            tomatoRules,
+            '',
+            '审核内容:',
+            draftText,
+            '',
+            '输出要求: 逐项给出 PASS 或 FAIL。如有 FAIL 必须引用原文并说明触犯规则。',
+            '最后一行必须输出 VERDICT: {PASS|FAIL}。全部 PASS 才能给 PASS。',
+          ].join('\\n')
+
+          const { useLLMStore } = await import('../../stores/llm-store')
+          const result = await useLLMStore.getState().callLLM(auditPrompt, {
+            systemPrompt: '你是番茄小说平台的内容审核专员，严谨客观逐项检查。',
+          })
+          const cleanResult = stripThinkingTags(result)
+          context.data.tomatoAuditResult = cleanResult
+          callbacks.log(cleanResult.slice(0, 500))
+
+          const verdict = cleanResult.match(/VERDICT:\\s*(PASS|FAIL)/i)
+          if (!verdict || verdict[1].toUpperCase() === 'FAIL') {
+            const failCount = (cleanResult.match(/FAIL/gi) || []).length
+            throw new Error(
+              '番茄平台审核未通过（' + failCount + ' 项不合格）。请先修改内容后重新定稿。\\n' +
+              '审核详情：\\n' + cleanResult.slice(0, 1000)
+            )
+          }
+          callbacks.log('✅ 番茄平台内容安全审核通过')
+        },
+      },
       {
         name: '定稿',
         description: '写入 manuscript/，开启后处理 Command 更新三路大纲',
-        agentRole: params.agentRole || 'chronicler',
+        agentRole: params.agentRole || undefined,
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
         ],
