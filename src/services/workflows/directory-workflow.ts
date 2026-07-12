@@ -163,7 +163,7 @@ export function createDirectoryWorkflow(params: DirectoryWorkflowParams = { mode
         name: '生成蓝图',
         description: '基于架构文件生成全书章节蓝图',
         resumable: true,
-        agentRole: params.agentRole || 'blueprint-agent',
+        agentRole: params.agentRole || undefined,
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
           {

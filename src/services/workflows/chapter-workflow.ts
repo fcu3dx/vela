@@ -130,7 +130,7 @@ export function createChapterWorkflow(chapterInfo: ChapterInfo): WorkflowDefinit
       {
         name: '写稿',
         description: '基于架构 + 蓝图 + 上下文生成草稿',
-        agentRole: chapterInfo.agentRole || 'narrative-writer',
+        agentRole: chapterInfo.agentRole || undefined,
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
         ],
@@ -153,7 +153,7 @@ export function createRefineOnlyWorkflow(params: RefineOnlyParams): WorkflowDefi
       {
         name: '修稿',
         description: '将草稿提升到大神级质量，保存修稿并打开合并视图',
-        agentRole: 'refinement-editor',
+        agentRole: params.agentRole || undefined,
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
         ],
@@ -186,7 +186,7 @@ export function createRefineFromReviewWorkflow(params: RefineFromReviewParams): 
       {
         name: '审稿驱动修稿',
         description: '根据审稿报告精准修复问题调用 Command',
-        agentRole: params.agentRole || 'refinement-editor',
+        agentRole: params.agentRole || undefined,
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
         ],
@@ -216,7 +216,7 @@ export function createReviewOnlyWorkflow(params: ReviewOnlyParams): WorkflowDefi
       {
         name: '审稿',
         description: '一致性检查（角色/剧情/世界观），生成审稿报告',
-        agentRole: params.agentRole || 'critic',
+        agentRole: params.agentRole || undefined,
         gates: [
           { name: 'format', type: 'format', severity: 'blocker' },
         ],
