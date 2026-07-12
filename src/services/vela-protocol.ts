@@ -43,7 +43,30 @@ export async function writeCoreContent(velaPath: string, content: string): Promi
     const dbField = parseCoreField(velaPath)
     if (!dbField) return false
     const res = await ipc.invoke('db:project-core-update', { [dbField]: content })
-    return res.success !== false
+    if (res.success === false) return false
+
+    // v0.3.0 FIX: 同步更新 Zustand novelConfig，避免 saveProject() 用陈旧值覆盖 DB
+    // 用户手动编辑架构后点击保存 → 只写 DB 不写 Zustand → 下次 saveProject() 覆盖 DB
+    const { useProjectStore } = await import('../stores/project-store')
+    const project = useProjectStore.getState().currentProject
+    if (project) {
+      const updates: Record<string, string> = { [dbField]: content }
+      // 同时更新 novelConfig 的前端映射字段（coreOutline/worldSetting/protagonistProfile）
+      const reverseMap: Record<string, string> = {
+        synopsis: 'coreOutline',
+        worldbuilding: 'worldSetting',
+        charactersArch: 'protagonistProfile',
+      }
+      const novelField = reverseMap[dbField]
+      if (novelField) updates[novelField] = content
+      if (dbField === 'premise') updates.premise = content
+      useProjectStore.getState().updateNovelConfig(updates)
+    }
+
+    // 通知 UI 刷新架构面板
+    const { globalEventBus } = await import('../shared/event-bus')
+    globalEventBus.emit('ARCH_FILE_UPDATED', { fileName: dbField })
+    return true
 }
 
 // ===== vela://draft/ | vela://revision/ | vela://review/ 内容读取 =====
