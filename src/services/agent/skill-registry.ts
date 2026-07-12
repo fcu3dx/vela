@@ -174,6 +174,11 @@ class SkillRegistryImpl {
     return this.skills.size
   }
 
+  /** v0.3.0: 将 Skill 输出持久化到项目文件系统（公开方法） */
+  async saveOutputToDisk(skillName: string, content: string): Promise<string | null> {
+    return saveSkillOutput(skillName, content)
+  }
+
   /** 清空 */
   clear(): void {
     this.skills.clear()

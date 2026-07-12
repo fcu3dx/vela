@@ -183,7 +183,7 @@ function registerBuiltinAgents(registry: AgentRegistryImpl): void {
 ## 字数控制
 严格遵循细纲中设定的字数目标, 不欠字不回炉`,
       triggerKeywords: ['写', '续写', '日更', '正文', '章节', '生成', '写稿', '写作'],
-      recommendedSkills: ['novel-draft', 'writing-modes', 'deai-filter'],
+      recommendedSkills: ['novel-draft', 'writing-modes'],
     },
     {
       role: 'consistency-checker',
@@ -420,7 +420,7 @@ function registerBuiltinAgents(registry: AgentRegistryImpl): void {
 - 提升文字自然度和文学性
 - 不做大段落删除，只做精准润色`,
       triggerKeywords: ['修稿', '润色', '精修', '消除 AI 味'],
-      recommendedSkills: ['style-creator'],
+      recommendedSkills: ['style-creator', 'deai-filter', 'review-chapter'],
     },
     {
       role: 'quality-gate',

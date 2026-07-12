@@ -94,6 +94,18 @@ export function createBenchmarkWorkflow(params: BenchmarkWorkflowParams): Workfl
           const clean = stripThinkingTags(result)
           context.data.benchmarkResult = clean
           callbacks.log(`✅ ${modeLabel}完成`)
+
+          // v0.3.0: 保存结果到项目文件系统，用户可直接在 Vela 中查看
+          import('../agent/skill-registry').then(async ({ skillRegistry }) => {
+            const savedPath = await skillRegistry.saveOutputToDisk(skillName, clean)
+            if (savedPath) {
+              callbacks.log(`📁 结果已保存: ${savedPath}`)
+              // 通知 UI 刷新文件树
+              const { globalEventBus } = await import('../../shared/event-bus')
+              globalEventBus.emit('ARCH_FILE_UPDATED', { fileName: savedPath })
+            }
+          })
+
           params.onComplete?.(clean)
         },
       },
