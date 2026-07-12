@@ -257,23 +257,14 @@ export function createFinalizeWorkflow(params: FinalizeOnlyParams): WorkflowDefi
         executor: async (_step, context, callbacks) => {
           callbacks.log('🔍 执行番茄小说平台内容安全审核...')
 
-          const tomatoRules = [
-            '1. 涉政: 不得涉及中国政治人物/事件/敏感历史',
-            '2. 色情: 脖子以下亲密行为禁止细节描写',
-            '3. 暴力: 禁止断肢/内脏/虐杀等过度血腥描写',
-            '4. 宗教: 不得贬损或歪曲任何宗教',
-            '5. 未成年: 禁止未成年人恋爱/亲密描写',
-            '6. 擦边: 禁止暗示性描写',
-            '7. 医疗/法律: 涉及现实医学/法律细节需标注纯属虚构',
-            '8. 广告: 禁止软广/硬广/引流',
-          ].join('\\n')
+          const { TOMATO_COMPLIANCE_RULES } = await import('./platform-rules')
 
           const draftText = params.draftContent.slice(0, 8000)
           const auditPrompt = [
             '请逐项检查以下小说章节内容，判断是否触犯番茄小说平台规则。',
             '',
             '审核规则:',
-            tomatoRules,
+            TOMATO_COMPLIANCE_RULES,
             '',
             '审核内容:',
             draftText,

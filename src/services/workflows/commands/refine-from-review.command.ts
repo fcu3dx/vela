@@ -32,7 +32,7 @@ export class RefineFromReviewCommand extends BaseWorkflowCommand<string> {
       ? `★【用户额外修稿指导（绝对优先级）】★：\n${this.params.userRefinePrompt}`
       : ''
 
-    const tomatoGuard = '\n\n【内容安全避规·番茄小说平台】脖子以上亲密行为禁止感官细节；血腥暴力禁止断肢内脏描写；严禁涉黄擦边和宗教敏感。暧昧用眼神/微笑/心跳体现，战斗展现胜负结果而非过程。'
+    const { TOMATO_GUARD_SUMMARY: tomatoGuard } = await import('../platform-rules')
 
     const promptBuilder = new ChapterPromptBuilder(template)
       .withReviewReport(this.params.reviewReport)

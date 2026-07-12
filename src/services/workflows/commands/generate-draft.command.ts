@@ -21,9 +21,9 @@ export class GenerateDraftCommand extends BaseWorkflowCommand {
     callbacks.log('拼装章节上下文 (强类型注入中)...')
 
     const architecture = await this.readArchitecture(project.path)
-    const projectPrompts = await this.readProjectPrompts(project.path)
+        const projectPrompts = await this.readProjectPrompts(project.path)
     // v0.2.3: 番茄小说平台审核规则（写稿阶段即嵌入，确保内容合规）
-    const tomatoGuard = `\n\n===== 内容安全避规（番茄小说平台）=====\n【严禁内容】\n1. 脖子以上亲密行为的具体感官描写（接吻可以写，但禁止舌吻、吸吮、体液交换等细节）\n2. 血腥暴力的感官细节（战斗场面可写，但禁止断肢、内脏、骨骼等视觉/触觉细节）\n3. 政治敏感、宗教极端、民族煽动内容（请用架空世界观处理）\n4. 涉黄低俗擦边球暗示（包含但不限于性暗示台词、擦边场景、敏感部位描写）\n5. 医疗过程、法律程序的详细操作（如有涉医涉法情节，请在结尾标注"纯属虚构"）\n【正面要求】\n- 暧昧关系用"眼神、微笑、心跳"来体现，不用肢体直接描写\n- 战斗以招式、策略、气势为主，展现胜负结果而非过程细节\n- 保持爽感和节奏，不因规避规则而放慢叙事\n==========================`
+    const { TOMATO_COMPLIANCE_RULES: tomatoGuard } = await import('../platform-rules')
 
     const mergedGuidance = [project.novelConfig.globalGuidance || '', projectPrompts, tomatoGuard].filter(Boolean).join('\n\n')
 

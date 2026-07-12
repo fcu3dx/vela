@@ -30,10 +30,10 @@ export class RefineDraftCommand extends BaseWorkflowCommand<string> {
 
     callbacks.log('正在进行大神级修稿...')
 
-    const template = getPromptTemplate('refine_chapter')
+    const template = getPromptTemplate('refine_draft')
     if (!template) throw new Error('未找到修稿模板')
 
-    const tomatoGuard = '\n\n【内容安全避规·番茄小说平台】脖子以上亲密行为禁止感官细节；血腥暴力禁止断肢内脏描写；严禁涉黄擦边和宗教敏感；医疗/法律情节请标注"纯属虚构"。暧昧用眼神/微笑/心跳体现，战斗展现胜负结果而非过程。'
+    const { TOMATO_GUARD_SUMMARY: tomatoGuard } = await import('../platform-rules')
     const mergedGuidance = this.params.mergedGuidance || project.novelConfig.globalGuidance || ''
     const userPromptBlock = this.params.userRefinePrompt?.trim()
       ? `★【用户额外修稿指导（绝对优先级）】★：\n${this.params.userRefinePrompt}`
