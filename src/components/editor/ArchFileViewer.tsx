@@ -147,6 +147,26 @@ export default function ArchFileViewer({ filePath, content: initialContent }: Pr
     })
   }, [handleReload])
 
+  // v0.3.0: 监听架构文件更新事件，当其他位置（如 NovelConfigEditor）保存架构时也刷新
+  useEffect(() => {
+    return globalEventBus.on('ARCH_FILE_UPDATED', (payload) => {
+      const stepKey = detectStepKey(filePath)
+      if (!stepKey) return
+      if (payload.fileName === stepKey || payload.fileName === `${stepKey}.md`) {
+        // 如果当前 Tab 未修改，直接重新加载；如果已修改，只刷新 savedContentRef 避免覆盖用户输入
+        const isDirty = currentContentRef.current !== savedContentRef.current
+        if (!isDirty) {
+          handleReload()
+        } else {
+          // 已修改时仅从 DB 读取最新内容作为备份，不强制刷新 UI
+          readCoreContent(filePath).then(_dbContent => {
+            console.log('[ArchFileViewer] ARCH_FILE_UPDATED 检测到后台更新（当前有未保存修改，跳过强制刷新）')
+          })
+        }
+      }
+    })
+  }, [filePath, handleReload])
+
   /** 确认后启动架构生成工作流 */
   const handleConfirm = async (selectedSteps: ArchStepKey[], stepGuidance: Record<string, string>, agent?: AgentRole) => {
     useWorkflowStore.getState().startWorkflow(createArchitectureWorkflow({ selectedSteps, stepGuidance, agentRole: agent }))

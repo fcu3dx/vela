@@ -54,9 +54,12 @@ export default function NovelConfigEditor() {
     try {
       await saveProject()
       addLog('info', '📝 小说配置已保存')
+      // v0.3.0: 通知架构文件视图刷新（如果用户同时在 ArchFileViewer 中编辑）
+      const { globalEventBus } = await import('../../shared/event-bus')
+      globalEventBus.emit('ARCH_FILE_UPDATED', { fileName: 'all' })
     } catch (error) {
       console.error('[NovelConfigEditor] 保存失败:', error)
-      addLog('error', `保存失败: ${error}`)
+      addLog('error', `保存失败：${error}`)
     } finally {
       savingRef.current = false
       setSaving(false)
