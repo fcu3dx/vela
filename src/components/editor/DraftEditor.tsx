@@ -499,6 +499,20 @@ export default function DraftEditor({ filePath, content }: Props) {
             <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
               {status === 'finalized' ? '已定稿（只读）' : '已归档（只读）'}
             </span>
+            {/* v0.3.0: 撤回定稿 — 修改已定稿章节 */}
+            {status === 'finalized' && meta && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={doRevokeFinalize}
+                disabled={isChapterBusy}
+                title="撤回定稿 — 首次修改已定稿章节时使用，之后可再次定稿"
+                className="text-[0.65rem] opacity-60 hover:opacity-100"
+              >
+                <Undo2 size={10} />
+                撤回定稿
+              </Button>
+            )}
             {/* 已定稿 → 有失败项时显示修复定稿按钮 */}
             {status === 'finalized' && meta && hasProcessFailure && (
               <Button
