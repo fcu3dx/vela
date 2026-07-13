@@ -30,7 +30,7 @@ export class RefineDraftCommand extends BaseWorkflowCommand<string> {
 
     callbacks.log('正在进行大神级修稿...')
 
-    const template = getPromptTemplate('refine_draft')
+    const template = getPromptTemplate('refine_chapter')
     if (!template) throw new Error('未找到修稿模板')
 
     const { TOMATO_GUARD_SUMMARY: tomatoGuard } = await import('../platform-rules')
