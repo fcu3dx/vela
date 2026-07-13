@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Sparkles, Search, BadgeCheck, Save, FileStack, FileText, Wrench } from 'lucide-react'
+import { Sparkles, Search, BadgeCheck, Save, FileStack, FileText, Wrench, Undo2 } from 'lucide-react'
 
 import { useProjectStore } from '../../stores/project-store'
 import { useEditorStore } from '../../stores/editor-store'
@@ -210,6 +210,32 @@ export default function DraftEditor({ filePath, content }: Props) {
       }), false)
     } catch (e) {
       toast.error(`定稿启动失败：${e}`)
+    }
+  }
+
+  /** 撤回定稿 — 将已定稿章节状态回退到 draft，允许修改 */
+  const doRevokeFinalize = async () => {
+    if (!meta || status !== 'finalized') return
+    const ok = await confirm(
+          `确定要撤回第 ${meta.chapterNumber} 章的定稿吗？\\n\\n撤回后将执行以下操作：\\n• 恢复为「草稿」状态，可重新编辑、修稿、审稿，并再次定稿\\n• 清空蓝图笔记 & 删除后处理跑批记录\\n• 删除知识库中本章文档\\n• 删除已生成的定稿文件（第N章.txt / 番茄版 / 公众号版）`,
+          {
+            title: '确认撤回定稿',
+            confirmText: '确认撤回',
+          }
+        )
+    if (!ok) return
+    try {
+      const { ipc } = await import('../../services/ipc-client')
+      const result = await ipc.invoke('db:draft-revoke-finalize', meta.chapterNumber)
+      if (!result.success) {
+        toast.error(result.error || '撤回失败')
+        return
+      }
+      toast.success(`已撤回第 ${meta.chapterNumber} 章定稿 — 状态恢复为草稿，文件/蓝图笔记/知识库/后处理均已清理`)
+      // 刷新页面状态
+      useProjectStore.getState().refreshFileTree()
+    } catch (e) {
+      toast.error(`撤回失败：${e}`)
     }
   }
 
@@ -446,6 +472,18 @@ export default function DraftEditor({ filePath, content }: Props) {
             >
               <BadgeCheck size={12} />
               定稿
+            </Button>
+            {/* v0.3.0: 撤回定稿 — 修改已定稿章节 */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={doRevokeFinalize}
+              disabled={isChapterBusy}
+              title="撤回定稿 — 首次修改已定稿章节时使用，之后可再次定稿"
+              className="text-[0.65rem] opacity-60 hover:opacity-100"
+            >
+              <Undo2 size={10} />
+              撤回定稿
             </Button>
           </div>
         )}
