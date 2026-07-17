@@ -164,7 +164,9 @@ export interface ProjectData {
 }
 
 export interface NovelConfig {
-  [key: string]: unknown
+  // [key: string]: unknown — REMOVED v0.3.1: 此 index signature 导致 AllInvokeChannels 类型联合塌缩
+  //   → tsc 报 db:draft-revoke-finalize 不在 keyof AllInvokeChannels 中
+  //   使用处通过 as Record<string, unknown> 显式转型即可（electron 已做）
   genre: string
   subGenre: string
   targetAudience: string
@@ -271,6 +273,7 @@ export interface DatabaseChannels {
   'db:draft-next-version': { args: [chapterNumber: number]; return: number }
   'db:draft-update-status': { args: [id: number, status: string, wordCount?: number]; return: { success: boolean; error?: string } }
   'db:draft-update-content': { args: [id: number, content: string, wordCount: number]; return: { success: boolean; error?: string } }
+  'db:draft-revoke-finalize': { args: [chapterNumber: number]; return: { success: boolean; error?: string } }
 
   // 5. revisions
   'db:revision-create': { args: [params: { baseDraftId: number; revisionIndex: number; revisionType: 'refine' | 'review-fix'; userPrompt?: string; reviewSourceId?: number; content: string; wordCount: number }]; return: { success: boolean; id?: number; error?: string } }

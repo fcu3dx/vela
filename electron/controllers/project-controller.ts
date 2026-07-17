@@ -104,14 +104,13 @@ export function registerProjectController() {
         return { success: false, project: null, error: '目录不存在' }
       }
 
-      // TODO: 这里可以加入一个检测旧版项目的逻辑（如果有 旧的 01_novel_config.json 等），提示不支持旧格式。
-      // 因为新架构不兼容旧项目，这里我们只要初始化 DB 即可
+      // 初始化 DB（若 .vela/vela.db 已存在则复用，否则建新库）
       initProjectDatabase(projectPath)
 
       // 从 DB 读取配置
       const coreData = ProjectCoreRepository.get()
       if (!coreData) {
-        // 如果是从空目录新建并打开，尝试初始化
+        // 空目录新建打开，初始化
         const folderName = path.basename(projectPath)
         ProjectCoreRepository.init(folderName)
       }
@@ -130,10 +129,10 @@ export function registerProjectController() {
           wordsPerChapter: updatedCoreData.wordsPerChapter,
           plotStructure: updatedCoreData.plotStructure as 'three_act' | 'heros_journey' | 'save_the_cat' | 'kishotenketsu' | 'multi_thread' | 'freeform',
           narrativePOV: updatedCoreData.narrativePov as 'third_limited' | 'first_person' | 'third_omniscient' | 'multi_pov',
-          coreOutline: updatedCoreData.synopsis || '',      // 向后兼容: synopsis → coreOutline
-          worldSetting: updatedCoreData.worldbuilding || '', // 向后兼容: worldbuilding → worldSetting
+          coreOutline: updatedCoreData.synopsis || '',
+          worldSetting: updatedCoreData.worldbuilding || '',
           goldenFinger: updatedCoreData.goldenFinger,
-          protagonistProfile: updatedCoreData.charactersArch || '', // 向后兼容: charactersArch → protagonistProfile
+          protagonistProfile: updatedCoreData.charactersArch || '',
           globalGuidance: updatedCoreData.globalGuidance,
           writingStyle: updatedCoreData.writingStyle,
           referenceWorks: updatedCoreData.referenceWorks,
@@ -144,7 +143,7 @@ export function registerProjectController() {
           premise: updatedCoreData.premise || '',
         },
         characterStates: updatedCoreData.characterStates,
-        createdAt: new Date().toISOString(), // db 中实际上有，但这里先 mock 一下时间避免前端报错
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
 
@@ -157,7 +156,6 @@ export function registerProjectController() {
   })
 
   // 保存/更新项目配置
-  // 注意：这个接口前端可能还传了很多 novelConfig 中的字段，我们需要 mapping 给 DB。
   ipcMain.handle('project:save', async (_event, _projectId: string, data: Partial<ProjectData>) => {
     try {
       if (!data.path) return { success: false, error: '缺少项目路径' }
@@ -180,12 +178,12 @@ export function registerProjectController() {
         if (data.novelConfig.coreOutline) updateData.synopsis = data.novelConfig.coreOutline
         if (data.novelConfig.worldSetting) updateData.worldbuilding = data.novelConfig.worldSetting
         if (data.novelConfig.protagonistProfile) updateData.charactersArch = data.novelConfig.protagonistProfile
-        // v0.2.1: 同时传递 AI 生成字段（synopsis/worldbuilding/charactersArch 存于 novelConfig）
-        const nc = data.novelConfig as Record<string, unknown>
-        if (nc.synopsis) updateData.synopsis = nc.synopsis as string
-        if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding as string
-        if (nc.charactersArch) updateData.charactersArch = nc.charactersArch as string
-        if (nc.premise) updateData.premise = nc.premise as string
+        // v0.2.1: 同时传递 AI 生成字段
+        const nc = data.novelConfig
+        if (nc.synopsis) updateData.synopsis = nc.synopsis
+        if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding
+        if (nc.charactersArch) updateData.charactersArch = nc.charactersArch
+        if (nc.premise) updateData.premise = nc.premise
         ProjectCoreRepository.update(updateData)
       }
 
@@ -204,12 +202,13 @@ export function registerProjectController() {
       })
 
       return { success: true }
-    } catch (error) {
-      return { success: false, error: String(error) }
+    } catch (err) {
+      console.error('[project:save] Failed:', err)
+      return { success: false, error: String(err) }
     }
   })
 
-  // project:update-config 同理
+  // 仅更新 NovelConfig（不触发文件结构重建）
   ipcMain.handle('project:update-config', async (_event, _projectId: string, data: Partial<ProjectData>) => {
     try {
       if (data.novelConfig) {
@@ -226,16 +225,16 @@ export function registerProjectController() {
           writingStyle: data.novelConfig.writingStyle ?? '',
           referenceWorks: data.novelConfig.referenceWorks ?? '',
         }
-        // 架构字段仅当有内容时才写入，避免空字符串覆盖 AI 已生成内容
+        // 架构字段仅当有内容时才写入
         if (data.novelConfig.coreOutline) updateData.synopsis = data.novelConfig.coreOutline
         if (data.novelConfig.worldSetting) updateData.worldbuilding = data.novelConfig.worldSetting
         if (data.novelConfig.protagonistProfile) updateData.charactersArch = data.novelConfig.protagonistProfile
-        // v0.2.1: 同时传递 AI 生成字段（synopsis/worldbuilding/charactersArch 存于 novelConfig）
-        const nc = data.novelConfig as Record<string, unknown>
-        if (nc.synopsis) updateData.synopsis = nc.synopsis as string
-        if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding as string
-        if (nc.charactersArch) updateData.charactersArch = nc.charactersArch as string
-        if (nc.premise) updateData.premise = nc.premise as string
+        // v0.2.1: 同时传递 AI 生成字段
+        const nc = data.novelConfig
+        if (nc.synopsis) updateData.synopsis = nc.synopsis
+        if (nc.worldbuilding) updateData.worldbuilding = nc.worldbuilding
+        if (nc.charactersArch) updateData.charactersArch = nc.charactersArch
+        if (nc.premise) updateData.premise = nc.premise
         ProjectCoreRepository.update(updateData)
       }
       return { success: true }
