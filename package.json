@@ -88,19 +88,5 @@
     "vite-plugin-electron": "^0.29.1",
     "vite-plugin-electron-renderer": "^0.14.5",
     "vitest": "^4.1.4"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "electron",
-      "electron-winstaller",
-      "esbuild",
-      "@lancedb/lancedb-darwin-arm64"
-    ],
-    "extraDependencies": [
-      "apache-arrow",
-      "flatbuffers",
-      "reflect-metadata"
-    ]
   }
 }

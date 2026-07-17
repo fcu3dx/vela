@@ -35,3 +35,10 @@ Thumbs.db
 *.local
 dist-ssr
 tailwind.config.js.bak
+
+# AI 工具本地配置
+.agents/
+.claude/
+.codeartsdoer/
+.junie/
+skills-lock.json
